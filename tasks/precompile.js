@@ -1,50 +1,195 @@
 /*
  * grunt-precompile
- * 
+ *
  *
  * Copyright (c) 2014 jack chen
  * Licensed under the MIT license.
  */
 
 'use strict';
+var i18nRegExp = /\{@i18n\s+?key=["](.+?)["]\s*?\/}/gmi,
+    dustRegExp = /\.dust$/,
+    propsRegExp = /\.properties$/,
+    multiLineRegExp = /\\\r?\n\s*/g,
+    missingKeyRegExp = /(\{\{.*\}\})/,
+    path = require('path'),
+    sep = path.sep,
+    file = require('fs'),
+    util = {};
+
+util = {
+    endsWith: function(str, suffix) {
+        return str.substring(str.length - suffix.length, str.length) === suffix;
+    },
+    _convertStringIfTrue: function (original) {
+        var str;
+        if (original && typeof original === "string") {
+            str = original.toLowerCase().trim();
+            return (str === "true" || str === "false") ? (str === "true") : original;
+        }
+        return original;
+    },
+    convertPropsToJson: function (text) {
+        var jsonObj = {},
+            _this = this;
+        if (text && text.length) {
+            // handle multi-line values terminated with a backslash
+            text = text.replace(multiLineRegExp, '');
+            text.split(/\r?\n/g).forEach(function (line) {
+                var props,
+                    name,
+                    val;
+                line = line.trim();
+                if (line && line.indexOf("#") !== 0 && line.indexOf("!") !== 0) {
+                    props = line.split(/\=(.+)?/);
+                    name = props[0] && props[0].trim();
+                    val = props[1] && props[1].trim();
+                    jsonObj[name] = _this._convertStringIfTrue(val);
+                }
+            });
+        }
+        return jsonObj;
+    },
+    getNormalizedLocale: function(country, lang) {
+        country = country || this.__defaultCountry();
+        lang = lang || this.__defaultLanguage();
+
+        return ('' + country).toUpperCase() + '-' + ('' + lang).toLowerCase();
+    },
+    __defaultLocale: function(country, lang) {
+        var countryCode = this.__defaultCountry(country),
+            langCode = this.__defaultLanguage(lang);
+
+        return countryCode + '-' + langCode;
+    },
+    __defaultCountry: function(countryCode) {
+        countryCode = countryCode && ('' + countryCode).toUpperCase() || 'US';
+        return countryCode;
+    },
+    __defaultLanguage: function(languageCode) {
+        languageCode = languageCode && ('' + languageCode).toLowerCase() || 'en';
+        return languageCode;
+    }
+
+};
+
+
 
 module.exports = function(grunt) {
 
-  // Please see the Grunt documentation for more information regarding task
-  // creation: http://gruntjs.com/creating-tasks
+    // Please see the Grunt documentation for more information regarding task
+    // creation: http://gruntjs.com/creating-tasks
 
-  grunt.registerMultiTask('precompile', 'The grunt plugin for pre-compile i18n tag in dust template', function() {
-    // Merge task-specific and/or target-specific options with these defaults.
-    var options = this.options({
-      punctuation: '.',
-      separator: ', '
+    grunt.registerMultiTask('precompile', 'Pre-compile for i18n tag in DUST template', function() {
+        // Merge task-specific and/or target-specific options with these defaults.
+        var options = this.options({
+                templatesFolder: 'templates',
+                scriptsFolder: 'scripts',
+                localesFolder: 'locales',
+                commonPropsFolder: 'common',
+                missingKeyMsgPattern: '[[missing key: {{missing.key.msg}}]]'
+            }),
+            localesRootPath = options.localesRootPath,
+            templatesFolder = options.templatesFolder,
+            scriptsFolder = options.scriptsFolder,
+            localesFolder = options.localesFolder,
+            missingKeyMsgPattern = options.missingKeyMsgPattern,
+            localesList = [], // locales list will be an array containing normalized Country-lang code list, e.g. ['DE-de', 'US-en', 'GB-en'];
+            localizedTemplatesList = [];
+
+        // To get all of the available locales list under localesRootPath;
+        console.log('============localesRootPath=======', localesRootPath);
+        file.readdirSync(localesRootPath).forEach(function(country, idx) {
+            var countryPath = path.join(localesRootPath, country),
+                locale = '';
+
+            file.readdirSync(countryPath).forEach(function(lang, idx) {
+                locale = util.getNormalizedLocale(country, lang);
+                if (localesList.indexOf(locale) == -1) {
+                    localesList.push(locale);
+                }
+            });
+
+        });
+
+
+        console.log('===========localesList is==========', localesList);
+
+        // Copy all the source dust template files to each targeted locale folder.
+        this.filesSrc.forEach(function(srcpath, idx) {
+            var destpath = '',
+                localeFolder = 'US/en',
+                templatespath = srcpath.split(sep).slice(1).join(sep);
+
+            console.log('=====src template path=====', srcpath);
+
+            localesList.forEach(function(locale, idx) {
+                localeFolder = locale.split('-').join(sep);
+                destpath = path.join(localesRootPath, localeFolder, templatespath);
+
+                localizedTemplatesList.push(destpath);
+
+                grunt.file.copy(srcpath, destpath, {
+                    noProcess: false
+                });
+
+            });
+
+        });
+
+        /*
+        ** Handle the {@i18n} tag in each dust template file in each locale, replace it with associated localized properties file
+        ** Or show the missing key error message if the key is missing
+        */
+        localizedTemplatesList.map(function(filepath){
+            var dustFilePath = filepath,
+                dustFileContent = grunt.file.read(dustFilePath),
+                propsFile = dustFilePath.replace(dustRegExp, '.properties'),
+                isPropsExists = grunt.file.exists(propsFile),
+                propsJSON = isPropsExists ? util.convertPropsToJson(grunt.file.read(propsFile)) : {};
+
+            return {
+                dustFilePath: dustFilePath,
+                dustFileContent: dustFileContent,
+                propsJSON: propsJSON
+            };
+
+        }).forEach(function(obj, idx){
+            var content = obj.dustFileContent,
+                dustFilePath = obj.dustFilePath,
+                propsJSON = obj.propsJSON,
+                isI18nExists = false,
+                localizedText = '',
+                ret = '';
+              
+            /*
+            ** Though we can use the RegExp object's exec or String.prototype.match method, 
+            ** however the String.prototype.replace method is much easier and flexible to generate the resouce bundle file
+            ** no matter this file format is a JAVA property or JSON file
+            */
+            ret = content.replace(i18nRegExp, function(match, key, value, offset, origStr){
+                if(!isI18nExists){
+                    isI18nExists = true;
+                }
+                /*console.log('==============================');
+                console.log('match: ', match);
+                console.log('key: ', key);
+                console.log('value: ', value);*/
+                localizedText = propsJSON[key];
+                if(!localizedText){
+                  localizedText = missingKeyMsgPattern.replace(missingKeyRegExp, key);
+                }
+                
+                return localizedText;
+            });
+
+            if(isI18nExists){
+                console.log('==== processed file is =====', dustFilePath);
+                grunt.file.write(dustFilePath, ret);
+            }
+        });
+
+
     });
-
-    // Iterate over all specified file groups.
-    this.files.forEach(function(f) {
-      // Concat specified files.
-      var src = f.src.filter(function(filepath) {
-        // Warn on and remove invalid source files (if nonull was set).
-        if (!grunt.file.exists(filepath)) {
-          grunt.log.warn('Source file "' + filepath + '" not found.');
-          return false;
-        } else {
-          return true;
-        }
-      }).map(function(filepath) {
-        // Read file source.
-        return grunt.file.read(filepath);
-      }).join(grunt.util.normalizelf(options.separator));
-
-      // Handle options.
-      src += options.punctuation;
-
-      // Write the destination file.
-      grunt.file.write(f.dest, src);
-
-      // Print a success message.
-      grunt.log.writeln('File "' + f.dest + '" created.');
-    });
-  });
 
 };
