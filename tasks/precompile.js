@@ -50,6 +50,12 @@ util = {
         }
         return jsonObj;
     },
+    getLocaleFromFilePath: function(filePath, localesRootPath){
+        var relativePath = path.relative(localesRootPath, filePath),
+            locale = relativePath.split(sep)[0] + '-' + relativePath.split(sep)[1];
+
+          return locale;
+    },
     getNormalizedLocale: function(country, lang) {
         country = country || this.__defaultCountry();
         lang = lang || this.__defaultLanguage();
@@ -87,26 +93,37 @@ module.exports = function(grunt) {
                 scriptsFolder: 'scripts',
                 localesFolder: 'locales',
                 commonPropsFolder: 'common',
-                missingKeyMsgPattern: '[[missing key: {{missing.key.msg}}]]'
+                commonPropsFile: 'app.properties',
+                missingKeyMsgPattern: '[[missing key: {{missing.key.msg}}]]',
+                commonPropsKeyPatternRegExp: '^common\\.'
             }),
-            localesRootPath = options.localesRootPath,
             templatesFolder = options.templatesFolder,
             scriptsFolder = options.scriptsFolder,
             localesFolder = options.localesFolder,
+            commonPropsFolder = options.commonPropsFolder,
+            commonPropsFile = options.commonPropsFile,
+            localesRootPath = options.localesRootPath,
             missingKeyMsgPattern = options.missingKeyMsgPattern,
+            commonPropsKeyPatternRegExp = new RegExp(options.commonPropsKeyPatternRegExp),
+            commonPropsJsonList = [], // contains the locale - commonPropsJson, e.g. [{'DE-de': {'key':'value'}}]
             localesList = [], // locales list will be an array containing normalized Country-lang code list, e.g. ['DE-de', 'US-en', 'GB-en'];
             localizedTemplatesList = [];
 
-        // To get all of the available locales list under localesRootPath;
+        // To get all of the available locales list and commonPropsJsonList
         console.log('============localesRootPath=======', localesRootPath);
         file.readdirSync(localesRootPath).forEach(function(country, idx) {
             var countryPath = path.join(localesRootPath, country),
-                locale = '';
+                locale = '',
+                commonPropsFilePath = '',
+                commonPropsJson = {};
 
             file.readdirSync(countryPath).forEach(function(lang, idx) {
                 locale = util.getNormalizedLocale(country, lang);
                 if (localesList.indexOf(locale) == -1) {
                     localesList.push(locale);
+                    commonPropsFilePath = path.join(localesRootPath, country, lang, commonPropsFolder, commonPropsFile);
+                    commonPropsJson[locale] = grunt.file.exists(commonPropsFilePath) ? util.convertPropsToJson(grunt.file.read(commonPropsFilePath)) : {};
+                    commonPropsJsonList.push(commonPropsJson);
                 }
             });
 
@@ -114,6 +131,7 @@ module.exports = function(grunt) {
 
 
         console.log('===========localesList is==========', localesList);
+        console.log('===========commonPropsJsonList is==========', commonPropsJsonList);
 
         // Copy all the source dust template files to each targeted locale folder.
         this.filesSrc.forEach(function(srcpath, idx) {
@@ -141,6 +159,7 @@ module.exports = function(grunt) {
         ** Handle the {@i18n} tag in each dust template file in each locale, replace it with associated localized properties file
         ** Or show the missing key error message if the key is missing
         */
+        // console.log('=========localizedTemplatesList', localizedTemplatesList);
         localizedTemplatesList.map(function(filepath){
             var dustFilePath = filepath,
                 dustFileContent = grunt.file.read(dustFilePath),
@@ -151,17 +170,27 @@ module.exports = function(grunt) {
             return {
                 dustFilePath: dustFilePath,
                 dustFileContent: dustFileContent,
-                propsJSON: propsJSON
+                propsJSON: propsJSON,
+                commonPropsJsonList: commonPropsJsonList
             };
 
         }).forEach(function(obj, idx){
             var content = obj.dustFileContent,
                 dustFilePath = obj.dustFilePath,
                 propsJSON = obj.propsJSON,
+                commonPropsJsonList = obj.commonPropsJsonList,
                 isI18nExists = false,
+                isCommonKey = false,
                 localizedText = '',
+                locale = util.getLocaleFromFilePath(dustFilePath, localesRootPath),
+                commonPropsJson = {},
                 ret = '';
-              
+            
+            commonPropsJsonList.forEach(function(obj){
+                if(obj[locale]){
+                  commonPropsJson = obj[locale];
+                }
+            });  
             /*
             ** Though we can use the RegExp object's exec or String.prototype.match method, 
             ** however the String.prototype.replace method is much easier and flexible to generate the resouce bundle file
@@ -175,7 +204,16 @@ module.exports = function(grunt) {
                 console.log('match: ', match);
                 console.log('key: ', key);
                 console.log('value: ', value);*/
-                localizedText = propsJSON[key];
+
+                isCommonKey = commonPropsKeyPatternRegExp.test(key);
+                
+                if(isCommonKey){
+                    localizedText = commonPropsJson[key];
+                }
+                else{
+                  localizedText = propsJSON[key];
+                }
+
                 if(!localizedText){
                   localizedText = missingKeyMsgPattern.replace(missingKeyRegExp, key);
                 }
