@@ -89,24 +89,6 @@ util = {
     },
     isEmpty: function(val){
         return (typeof val === 'undefined') || val === null;
-    },
-    printKeyMsg: function(options){
-        var isFound = options.isFound,
-            key = options.key,
-            filePath = options.filePath,
-            locale = options.locale;
-
-        if(isFound){
-            if(filePath){
-                console.log('==== this key has been found ====', {key: key, filePath: filePath, locale: locale});
-            }
-            else{
-                console.log('==== this key has been found in common properties ====', {key: key, locale: locale});
-            }
-        }
-        else{
-            console.log('!!! this key is missing !!!, now abort the current grunt task, please check the associated properties file', {key: key, locale: locale});
-        }
     }
 
 };
@@ -136,7 +118,7 @@ module.exports = function(grunt) {
             localizedTemplatesList = [];
 
         // To get all of the available locales list and commonPropsJsonList
-        console.log('============localesRootPath=======', localesRootPath);
+        grunt.verbose.writeln('============localesRootPath=======', localesRootPath);
         file.readdirSync(localesRootPath).forEach(function(country, idx) {
             var countryPath = path.join(localesRootPath, country),
                 locale = '',
@@ -177,8 +159,8 @@ module.exports = function(grunt) {
         });
 
 
-        console.log('===========localesList is==========', localesList);
-        console.log('===========commonPropsJsonList is==========', commonPropsJsonList);
+        grunt.log.subhead('[precompile] ==== available locale list is: ', localesList);
+        grunt.verbose.writeln('[precompile] ==== commonPropsJsonList is: ', commonPropsJsonList);
 
         // Copy all the source dust template files to each targeted locale folder.
         this.filesSrc.forEach(function(srcpath, idx) {
@@ -186,7 +168,7 @@ module.exports = function(grunt) {
                 localeFolder = 'US/en',
                 templatespath = srcpath.split(sep).slice(1).join(sep);
 
-            console.log('=====src template path=====', srcpath);
+            grunt.verbose.writeln('[precompile] ==== src template path: ', srcpath);
 
             localesList.forEach(function(locale, idx) {
                 localeFolder = locale.split('-').join(sep);
@@ -206,7 +188,7 @@ module.exports = function(grunt) {
         ** Handle the {@i18n} tag in each dust template file in each locale, replace it with associated localized properties file
         ** Or show the missing key error message if the key is missing
         */
-        // console.log('=========localizedTemplatesList', localizedTemplatesList);
+        // grunt.verbose.writeln('=========localizedTemplatesList', localizedTemplatesList);
         localizedTemplatesList.map(function(filepath){
             var dustFilePath = filepath,
                 dustFileContent = grunt.file.read(dustFilePath),
@@ -250,10 +232,10 @@ module.exports = function(grunt) {
                 if(!isI18nExists){
                     isI18nExists = true;
                 }
-                /*console.log('==============================');
-                console.log('match: ', match);
-                console.log('key: ', key);
-                console.log('value: ', value);*/
+                /*grunt.verbose.writeln('==============================');
+                grunt.verbose.writeln('match: ', match);
+                grunt.verbose.writeln('key: ', key);
+                grunt.verbose.writeln('value: ', value);*/
                 
                 // Fetch the localized message associated with this key, firstly search in the associated dust template
                 // if not found, then search it in the common properties files, if still not found then abort the grunt task.
@@ -264,36 +246,21 @@ module.exports = function(grunt) {
                     localizedText = commonPropsJson[key];
                     
                     if(util.isEmpty(localizedText)){
-                        util.printKeyMsg({
-                            key: key,
-                            isFound: false,
-                            locale: locale
-                        });
-
-                        grunt.fail.fatal('[[ missing key: ' + key + ' ]]');
+                        grunt.fail.fatal('[[ missing key: ' + (key).bold + ' ]] in file - ' + (dustFilePath).bold);
                     }
                     else{
-                        util.printKeyMsg({
-                            key: key,
-                            isFound: true,
-                            locale: locale
-                        });
+                        grunt.verbose.writeln('[precompile] ==== this key [[' + (key).blue + ']] has been found in locale [[ ' + (locale).yellow + ' ]]');
                     }
                 }
                 else{
-                    util.printKeyMsg({
-                        key: key,
-                        isFound: true,
-                        filePath: propsFilePath,
-                        locale: locale
-                    });
+                    grunt.verbose.writeln('[precompile] ==== this key [[' + (key).blue + ']] has been found in locale [[ ' + (locale).yellow + ' ]]');
                 }
                 
                 return localizedText;
             });
 
             if(isI18nExists){
-                console.log('==== processed file is =====', dustFilePath);
+                grunt.log.writeln('[precompile] ==== this file has i18n tag: ', dustFilePath);
                 grunt.file.write(dustFilePath, ret);
             }
         });
