@@ -75,6 +75,38 @@ util = {
     __defaultLanguage: function(languageCode) {
         languageCode = languageCode && ('' + languageCode).toLowerCase() || 'en';
         return languageCode;
+    },
+    extend: function(target){
+        var sources = [].slice.call(arguments, 1);
+        sources.forEach(function (source) {
+            for (var prop in source) {
+                if(Object.hasOwnProperty.call(source, prop)){
+                    target[prop] = source[prop];   
+                }
+            }
+        });
+        return target;
+    },
+    isEmpty: function(val){
+        return (typeof val === 'undefined') || val === null;
+    },
+    printKeyMsg: function(options){
+        var isFound = options.isFound,
+            key = options.key,
+            filePath = options.filePath,
+            locale = options.locale;
+
+        if(isFound){
+            if(filePath){
+                console.log('==== this key has been found ====', {key: key, filePath: filePath, locale: locale});
+            }
+            else{
+                console.log('==== this key has been found in common properties ====', {key: key, locale: locale});
+            }
+        }
+        else{
+            console.log('!!! this key is missing !!!, now abort the current grunt task, please check the associated properties file', {key: key, locale: locale});
+        }
     }
 
 };
@@ -92,19 +124,13 @@ module.exports = function(grunt) {
                 templatesFolder: 'templates',
                 scriptsFolder: 'scripts',
                 localesFolder: 'locales',
-                commonPropsFolder: 'common',
-                commonPropsFile: 'app.properties',
-                missingKeyMsgPattern: '[[missing key: {{missing.key.msg}}]]',
-                commonPropsKeyPatternRegExp: '^common\\.'
+                commonPropsSrc: ['common/**/*.properties']
             }),
             templatesFolder = options.templatesFolder,
             scriptsFolder = options.scriptsFolder,
             localesFolder = options.localesFolder,
-            commonPropsFolder = options.commonPropsFolder,
-            commonPropsFile = options.commonPropsFile,
             localesRootPath = options.localesRootPath,
-            missingKeyMsgPattern = options.missingKeyMsgPattern,
-            commonPropsKeyPatternRegExp = new RegExp(options.commonPropsKeyPatternRegExp),
+            commonPropsSrc = options.commonPropsSrc,
             commonPropsJsonList = [], // contains the locale - commonPropsJson, e.g. [{'DE-de': {'key':'value'}}]
             localesList = [], // locales list will be an array containing normalized Country-lang code list, e.g. ['DE-de', 'US-en', 'GB-en'];
             localizedTemplatesList = [];
@@ -114,16 +140,37 @@ module.exports = function(grunt) {
         file.readdirSync(localesRootPath).forEach(function(country, idx) {
             var countryPath = path.join(localesRootPath, country),
                 locale = '',
-                commonPropsFilePath = '',
+                commonLocalePropsSrc = [],
+                commonLocalePropsJson = {},
                 commonPropsJson = {};
 
             file.readdirSync(countryPath).forEach(function(lang, idx) {
                 locale = util.getNormalizedLocale(country, lang);
                 if (localesList.indexOf(locale) == -1) {
+                    
+                    // put the locale to the localesList array and reset the commonLocalePropsSrc which will hold all the common properties for the specified loale
                     localesList.push(locale);
-                    commonPropsFilePath = path.join(localesRootPath, country, lang, commonPropsFolder, commonPropsFile);
-                    commonPropsJson[locale] = grunt.file.exists(commonPropsFilePath) ? util.convertPropsToJson(grunt.file.read(commonPropsFilePath)) : {};
+                    commonLocalePropsSrc = [];
+                    /*
+                    ** constructure the commonPropsJsonList for each locale
+                    */
+                    // Re-constructure the commonPropsSrc, actually this is an array, but we need to re-build the common properties file pattern
+                    // Since by default, all file paths are relative to the `Gruntfile`, please have a reference: 
+                    // http://gruntjs.com/api/grunt.file#grunt.file.setbase and http://gruntjs.com/api/grunt.file#grunt.file.expand
+                    commonLocalePropsSrc = commonPropsSrc.map(function(commonPropsFilePattern, idx){
+                        return path.join(localesRootPath, country, lang, commonPropsFilePattern);
+                    });
+
+                    var commonPropsFileArr = grunt.file.expand(commonLocalePropsSrc);
+
+                    commonPropsFileArr.forEach(function(file, idx){
+                        var jsonObj = grunt.file.exists(file) ? util.convertPropsToJson(grunt.file.read(file)) : {};
+                        commonLocalePropsJson = util.extend(commonLocalePropsJson, jsonObj);
+                    });
+
+                    commonPropsJson[locale] = commonLocalePropsJson;
                     commonPropsJsonList.push(commonPropsJson);
+                    
                 }
             });
 
@@ -163,13 +210,14 @@ module.exports = function(grunt) {
         localizedTemplatesList.map(function(filepath){
             var dustFilePath = filepath,
                 dustFileContent = grunt.file.read(dustFilePath),
-                propsFile = dustFilePath.replace(dustRegExp, '.properties'),
-                isPropsExists = grunt.file.exists(propsFile),
-                propsJSON = isPropsExists ? util.convertPropsToJson(grunt.file.read(propsFile)) : {};
+                propsFilePath = dustFilePath.replace(dustRegExp, '.properties'),
+                isPropsExists = grunt.file.exists(propsFilePath),
+                propsJSON = isPropsExists ? util.convertPropsToJson(grunt.file.read(propsFilePath)) : {};
 
             return {
                 dustFilePath: dustFilePath,
                 dustFileContent: dustFileContent,
+                propsFilePath: propsFilePath,
                 propsJSON: propsJSON,
                 commonPropsJsonList: commonPropsJsonList
             };
@@ -178,6 +226,7 @@ module.exports = function(grunt) {
             var content = obj.dustFileContent,
                 dustFilePath = obj.dustFilePath,
                 propsJSON = obj.propsJSON,
+                propsFilePath = obj.propsFilePath,
                 commonPropsJsonList = obj.commonPropsJsonList,
                 isI18nExists = false,
                 isCommonKey = false,
@@ -197,6 +246,7 @@ module.exports = function(grunt) {
             ** no matter this file format is a JAVA property or JSON file
             */
             ret = content.replace(i18nRegExp, function(match, key, value, offset, origStr){
+
                 if(!isI18nExists){
                     isI18nExists = true;
                 }
@@ -204,18 +254,39 @@ module.exports = function(grunt) {
                 console.log('match: ', match);
                 console.log('key: ', key);
                 console.log('value: ', value);*/
-
-                isCommonKey = commonPropsKeyPatternRegExp.test(key);
                 
-                if(isCommonKey){
+                // Fetch the localized message associated with this key, firstly search in the associated dust template
+                // if not found, then search it in the common properties files, if still not found then abort the grunt task.
+                localizedText = propsJSON[key];
+                
+                if(util.isEmpty(localizedText)){
+
                     localizedText = commonPropsJson[key];
+                    
+                    if(util.isEmpty(localizedText)){
+                        util.printKeyMsg({
+                            key: key,
+                            isFound: false,
+                            locale: locale
+                        });
+
+                        grunt.fail.fatal('[[ missing key: ' + key + ' ]]');
+                    }
+                    else{
+                        util.printKeyMsg({
+                            key: key,
+                            isFound: true,
+                            locale: locale
+                        });
+                    }
                 }
                 else{
-                  localizedText = propsJSON[key];
-                }
-
-                if(!localizedText){
-                  localizedText = missingKeyMsgPattern.replace(missingKeyRegExp, key);
+                    util.printKeyMsg({
+                        key: key,
+                        isFound: true,
+                        filePath: propsFilePath,
+                        locale: locale
+                    });
                 }
                 
                 return localizedText;
