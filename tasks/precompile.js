@@ -16,8 +16,9 @@ var i18nRegExp = /\{@i18n\s+?key=["](.+?)["]\s*?\/}/gmi,
     path = require('path'),
     sep = path.sep,
     eol = require('os').EOL,
-    file = require('fs'),
-    util = {};
+    fs = require('fs'),
+    util = {},
+    scriptsPropsTemplateFile = '../scriptsProps.tpl';
 
 util = {
     endsWith: function(str, suffix) {
@@ -124,7 +125,6 @@ module.exports = function(grunt) {
             commonPropsSrc = options.commonPropsSrc,
             scriptsPropsSrc = options.scriptsPropsSrc,
             scriptsPropsFileName = options.scriptsPropsFileName,
-            scriptsPropsTemplateFile = grunt.file.expand(options.scriptsPropsTemplate)[0],
             scriptsPropsJsonList = [],  // contains the locale - scriptsPropsJson, similar with the variable commonPropsJsonList
             commonPropsJsonList = [],   // contains the locale - commonPropsJson, e.g. [{'DE-de': {'k1':'v1', 'k2':'v2'}}, {'GB-en': {'k1':'v1gb', 'k2':'v2gb'}}]
             localesList = [],           // locales list will be an array containing normalized Country-lang code list, e.g. ['DE-de', 'US-en', 'GB-en'];
@@ -132,7 +132,7 @@ module.exports = function(grunt) {
 
         // To get all of the available locales list and commonPropsJsonList
         grunt.verbose.writeln('============localesRootPath=======', localesRootPath);
-        file.readdirSync(localesRootPath).forEach(function(country, idx) {
+        fs.readdirSync(localesRootPath).forEach(function(country, idx) {
             var countryPath = path.join(localesRootPath, country),
                 locale = '',
                 commonLocalePropsSrc = [],
@@ -142,7 +142,7 @@ module.exports = function(grunt) {
                 scriptsLocalePropsJson = {},
                 scriptsPropsJson = {};
 
-            file.readdirSync(countryPath).forEach(function(lang, idx) {
+            fs.readdirSync(countryPath).forEach(function(lang, idx) {
                 locale = util.getNormalizedLocale(country, lang);
                 if (localesList.indexOf(locale) == -1) {
                     
@@ -228,7 +228,7 @@ module.exports = function(grunt) {
             
             grunt.verbose.subhead('**** scriptsPropsJson', scriptsPropsJson);
 
-            content = grunt.file.read(scriptsPropsTemplateFile);
+            content = grunt.file.read(path.join(__dirname, scriptsPropsTemplateFile));
             // Pretty print the JSON file format
             scriptsPropsJson = JSON.stringify(scriptsPropsJson, null, 4);
             scriptsPropsJson = scriptsPropsJson.replace(new RegExp(eol + util.createSpace(4), "mg"), eol + util.createSpace(8));
