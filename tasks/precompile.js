@@ -91,6 +91,11 @@ util = {
     },
     isEmpty: function(val){
         return (typeof val === 'undefined') || val === null;
+    },
+    createSpace: function(num){
+        // Default create 4 spaces
+        num = (num || 4) + 1;
+        return new Array(num).join(' ');
     }
 
 };
@@ -119,6 +124,7 @@ module.exports = function(grunt) {
             commonPropsSrc = options.commonPropsSrc,
             scriptsPropsSrc = options.scriptsPropsSrc,
             scriptsPropsFileName = options.scriptsPropsFileName,
+            scriptsPropsTemplateFile = grunt.file.expand(options.scriptsPropsTemplate)[0],
             scriptsPropsJsonList = [],  // contains the locale - scriptsPropsJson, similar with the variable commonPropsJsonList
             commonPropsJsonList = [],   // contains the locale - commonPropsJson, e.g. [{'DE-de': {'k1':'v1', 'k2':'v2'}}, {'GB-en': {'k1':'v1gb', 'k2':'v2gb'}}]
             localesList = [],           // locales list will be an array containing normalized Country-lang code list, e.g. ['DE-de', 'US-en', 'GB-en'];
@@ -218,10 +224,17 @@ module.exports = function(grunt) {
                 }
             });
 
-            scriptsPropsJson = util.extend({}, commonPropsJson, scriptsPropsJson, scriptsPropsJson);
+            scriptsPropsJson = util.extend({}, commonPropsJson, scriptsPropsJson);
+            
             grunt.verbose.subhead('**** scriptsPropsJson', scriptsPropsJson);
 
-            content = 'define(function(){' + eol + eol + 'var obj = ' + JSON.stringify(scriptsPropsJson, null, 4) + ';' + eol + '    return obj;' + eol + '});';
+            content = grunt.file.read(scriptsPropsTemplateFile);
+            // Pretty print the JSON file format
+            scriptsPropsJson = JSON.stringify(scriptsPropsJson, null, 4);
+            scriptsPropsJson = scriptsPropsJson.replace(new RegExp(eol + util.createSpace(4), "mg"), eol + util.createSpace(8));
+            scriptsPropsJson = scriptsPropsJson.replace("}", util.createSpace(4) + "}");
+
+            content = content.replace("{{i18nPropsJson}}", scriptsPropsJson);
             grunt.file.write(destPath, content);
             
         });
