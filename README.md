@@ -1,6 +1,6 @@
-# grunt-precompile
+# grunt-sh-precompile
 
-> The grunt plugin for pre-compile i18n tag in dust template
+> Grunt plugin for precompile dust template specific to Stubhub
 
 ## Getting Started
 This plugin requires Grunt `~0.4.5`
@@ -8,23 +8,23 @@ This plugin requires Grunt `~0.4.5`
 If you haven't used [Grunt](http://gruntjs.com/) before, be sure to check out the [Getting Started](http://gruntjs.com/getting-started) guide, as it explains how to create a [Gruntfile](http://gruntjs.com/sample-gruntfile) as well as install and use Grunt plugins. Once you're familiar with that process, you may install this plugin with this command:
 
 ```shell
-npm install grunt-precompile --save-dev
+npm install grunt-sh-precompile --save-dev
 ```
 
 Once the plugin has been installed, it may be enabled inside your Gruntfile with this line of JavaScript:
 
 ```js
-grunt.loadNpmTasks('grunt-precompile');
+grunt.loadNpmTasks('grunt-sh-precompile');
 ```
 
-## The "precompile" task
+## The "sh_precompile" task
 
 ### Overview
-In your project's Gruntfile, add a section named `precompile` to the data object passed into `grunt.initConfig()`.
+In your project's Gruntfile, add a section named `sh_precompile` to the data object passed into `grunt.initConfig()`.
 
 ```js
 grunt.initConfig({
-  precompile: {
+  sh_precompile: {
     options: {
       // Task-specific options go here.
     },
@@ -56,7 +56,7 @@ In this example, the default options are used to do something with whatever. So 
 
 ```js
 grunt.initConfig({
-  precompile: {
+  sh_precompile: {
     options: {},
     files: {
       'dest/default_options': ['src/testing', 'src/123'],
@@ -70,7 +70,7 @@ In this example, custom options are used to do something else with whatever else
 
 ```js
 grunt.initConfig({
-  precompile: {
+  sh_precompile: {
     options: {
       separator: ': ',
       punctuation: ' !!!',
