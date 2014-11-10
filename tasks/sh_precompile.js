@@ -1,5 +1,5 @@
 /*
- * grunt-precompile
+ * grunt-sh-precompile
  *
  *
  * Copyright (c) 2014 jack chen
@@ -94,7 +94,7 @@ module.exports = function(grunt) {
     // Please see the Grunt documentation for more information regarding task
     // creation: http://gruntjs.com/creating-tasks
 
-    grunt.registerMultiTask('precompile', 'Pre-compile for i18n tag in DUST template', function() {
+    grunt.registerMultiTask('sh_precompile', 'Pre compile DUST template, and this is not a generic grunt plugin', function() {
          // Merge task-specific and/or target-specific options with these defaults.
         var options = this.options({
                 templatesFolder: 'templates',
