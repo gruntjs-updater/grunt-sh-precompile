@@ -18,7 +18,7 @@ var i18nRegExp = /\{@i18n\s+?key=["](.+?)["]\s*?\/}/gmi,
     eol = require('os').EOL,
     fs = require('fs'),
     util = {},
-    scriptsPropsTemplateFile = '../scriptsProps.tpl';
+    i18nPropsForScriptsTemplateFile = '../i18nPropsForScripts.tpl';
 
 util = {
     endsWith: function(str, suffix) {
@@ -206,7 +206,7 @@ module.exports = function(grunt) {
             
             grunt.verbose.subhead('**** scriptsPropsJson', scriptsPropsJson);
 
-            content = grunt.file.read(path.join(__dirname, scriptsPropsTemplateFile));
+            content = grunt.file.read(path.join(__dirname, i18nPropsForScriptsTemplateFile));
             // Pretty print the JSON file format
             scriptsPropsJson = JSON.stringify(scriptsPropsJson, null, 4);
             scriptsPropsJson = scriptsPropsJson.replace(new RegExp(eol + util.createSpace(4), "mg"), eol + util.createSpace(8));
