@@ -1,6 +1,6 @@
 {
-  "name": "grunt-precompile",
-  "description": "The grunt plugin for pre-compile i18n tag in dust template",
+  "name": "grunt-sh-precompile",
+  "description": "The grunt plugin for pre compile i18n tag in dust template",
   "version": "0.1.0",
   "homepage": "",
   "author": {
@@ -9,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git://github.corp.ebay.com/yongbchen/precompile.git"
+    "url": "git://github.corp.ebay.com/yongbchen/sh-precompile.git"
   },
   "bugs": {
     "url": ""
