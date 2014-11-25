@@ -1,8 +1,8 @@
 {
   "name": "grunt-sh-precompile",
   "description": "Grunt plugin for precompile dust template specific to Stubhub",
-  "version": "0.2.0",
-  "homepage": "",
+  "version": "0.2.1",
+  "homepage": "https://github.com/StubHubLabs/grunt-sh-precompile",
   "author": {
     "name": "yongbchen",
     "email": "yongbchen@ebay.com"
