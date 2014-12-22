@@ -1,7 +1,7 @@
 {
   "name": "grunt-sh-precompile",
   "description": "Grunt plugin for precompile dust template specific to Stubhub",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "homepage": "https://github.com/StubHubLabs/grunt-sh-precompile",
   "author": {
     "name": "yongbchen",
@@ -25,6 +25,9 @@
   },
   "scripts": {
     "test": "grunt test"
+  },
+  "dependencies": {
+    "underscore": "~1.7.0"
   },
   "devDependencies": {
     "grunt-contrib-jshint": "^0.9.2",

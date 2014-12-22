@@ -34,6 +34,7 @@ module.exports = function(grunt) {
             sep = path.sep,
             eol = require('os').EOL,
             fs = require('fs'),
+            _ = require('underscore'),
             i18nPropsForScriptsTemplateFile = '../i18nPropsForScripts.tpl',
             util = {};
 
@@ -83,18 +84,6 @@ module.exports = function(grunt) {
 
             endsWith: function(str, suffix) {
                 return str.substring(str.length - suffix.length, str.length) === suffix;
-            },
-
-            extend: function(target){
-                var sources = [].slice.call(arguments, 1);
-                sources.forEach(function (source) {
-                    for (var prop in source) {
-                        if(Object.hasOwnProperty.call(source, prop)){
-                            target[prop] = source[prop];   
-                        }
-                    }
-                });
-                return target;
             },
 
             isEmpty: function(val){
@@ -196,7 +185,7 @@ module.exports = function(grunt) {
 
                         commonPropsFileArr.forEach(function(file, idx){
                             var jsonObj = grunt.file.exists(file) ? _this.convertPropsToJson(grunt.file.read(file)) : {};
-                            commonLocalePropsJson = _this.extend({}, commonLocalePropsJson, jsonObj);
+                            commonLocalePropsJson = _.extend({}, commonLocalePropsJson, jsonObj);
                         });
 
                         commonPropsJson[locale] = commonLocalePropsJson;
@@ -212,7 +201,7 @@ module.exports = function(grunt) {
 
                         scriptsPropsFileArr.forEach(function(file, idx){
                             var jsonObj = grunt.file.exists(file) ? _this.convertPropsToJson(grunt.file.read(file)) : {};
-                            scriptsLocalePropsJson = _this.extend({}, scriptsLocalePropsJson, jsonObj);
+                            scriptsLocalePropsJson = _.extend({}, scriptsLocalePropsJson, jsonObj);
                         });
 
                         scriptsPropsJson[locale] = scriptsLocalePropsJson;
@@ -235,6 +224,7 @@ module.exports = function(grunt) {
                     localesList = this.getLocalesList(),
                     commonPropsJsonList = this.getCommonPropsJsonList(),
                     scriptsPropsJsonList = this.getScriptsPropsJsonList(),
+                    generateScriptsPropsFileDestPath = options.generateScriptsPropsFileDestPath,
                     _this = this;
 
                 localesList.forEach(function(locale, idx){
@@ -243,27 +233,28 @@ module.exports = function(grunt) {
                         content = '',
                         destPath = path.join(localesRootPath, locale, scriptsFolder, scriptsPropsFileName + '.js');
 
-                    commonPropsJsonList.every(function(obj){
+                    if(_.isFunction(generateScriptsPropsFileDestPath)){
+                        destPath = generateScriptsPropsFileDestPath({
+                            locale: locale,
+                            options: options
+                        });
+                    }
+
+                    _.some(commonPropsJsonList, function (obj, idx, list){
                         if(obj[locale]){
                             commonPropsJson = obj[locale];
-                            return false;
-                        }
-                        else{
                             return true;
                         }
                     });
 
-                    scriptsPropsJsonList.every(function(obj){
+                    _.some(scriptsPropsJsonList, function (obj, idx, list){
                         if(obj[locale]){
                             scriptsPropsJson = obj[locale];
-                            return false;
-                        }
-                        else{
                             return true;
                         }
                     });
 
-                    scriptsPropsJson = _this.extend({}, commonPropsJson, scriptsPropsJson);
+                    scriptsPropsJson = _.extend({}, commonPropsJson, scriptsPropsJson);
                     
                     grunt.verbose.subhead('**** scriptsPropsJson', scriptsPropsJson);
 
@@ -283,7 +274,20 @@ module.exports = function(grunt) {
 
                 var localesList = this.getLocalesList(),
                     templatesList = this.getTemplatesList(),
-                    localesRootPath = options.localesRootPath;
+                    localesRootPath = options.localesRootPath,
+                    copyTemplateFiles = options.copyTemplateFiles,
+                    _this = this;
+
+                if(_.isFunction(copyTemplateFiles)){
+                    
+                    copyTemplateFiles({
+                        filesSrc: filesSrc,
+                        util: _this,
+                        options: options
+                    });
+
+                    return ;
+                }
 
                 filesSrc.forEach(function(srcpath, idx) {
                     var destpath = '',
