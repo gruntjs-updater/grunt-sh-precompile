@@ -200,9 +200,9 @@ module.exports = function(grunt) {
                     scriptsPropsJsonList.push(scriptsPropsJson);
                 });
 
-                grunt.log.subhead('[precompile] ==== available locale list is: ', localesList);
-                grunt.log.writeln('[precompile] ==== commonPropsJsonList is: ', commonPropsJsonList);
-                grunt.log.writeln('[precompile] ==== scriptsPropsJsonList is: ', scriptsPropsJsonList);
+                grunt.log.writeln(('[precompile] ==== available locale list is: ').bold.blue, localesList);
+                grunt.log.writeln(('[precompile] ==== commonPropsJsonList is: ').bold.blue, commonPropsJsonList);
+                grunt.log.writeln(('[precompile] ==== scriptsPropsJsonList is: ').bold.blue, scriptsPropsJsonList);
 
             },
             // Combile commonPropsJson with scriptsPropsJson to generate a new sripts properties for each locale
@@ -268,8 +268,18 @@ module.exports = function(grunt) {
                     _this = this;
 
                 filesSrc.forEach(function(srcpath, idx) {
+                    // this code line: srcpath = path.normalize(srcpath)
+                    // fix the issue on Windows Platform, since on windows git bash, the srcpath and sep value will be like below
+                    //
+                    // srcpath:  app/templates/footer.dust
+                    // sep    :  \
+                    // 
+                    // so firslty need to normalize the file path
                     var destpath = '',
-                        templatespath = srcpath.split(sep).slice(1).join(sep);
+                        templatespath = '';
+
+                    srcpath = path.normalize(srcpath);
+                    templatespath = srcpath.split(sep).slice(1).join(sep);
 
                     grunt.verbose.writeln('[precompile] ==== src template path: ', srcpath);
 
