@@ -128,6 +128,7 @@ And here is another exmaple which is coming from `https://github.corp.ebay.com/r
 ```js
 dev:{
     options:{
+        implementedLocalesList: ['en-us', 'en-gb', 'de-de'],
         localesRootPath: '<%= buildDevPath %><%= localesRootPath %>',
         commonPropsSrc: ['common/**/*.properties'],
         scriptsPropsSrc: ['scripts/**/*.properties'],
