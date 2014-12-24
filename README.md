@@ -37,49 +37,104 @@ grunt.initConfig({
 
 ### Options
 
-#### options.separator
+#### options.localesRootPath
 Type: `String`
-Default value: `',  '`
+Default value: no default value, this config option is required
 
-A string value that is used to do something with whatever.
+A string value, normally it should point to where the i18n/locale folder in the deployment build environment, this value will be like **build-dev/resources/shape/i18n**.
 
-#### options.punctuation
-Type: `String`
-Default value: `'.'`
+#### options.implementedLocalesList
+Type: `Array`
+Default value: no default value, this config option is required
 
-A string value that is used to do something else with whatever else.
+It specify the implemented locales list for current application.
+
+#### options.commonPropsSrc
+Type: `Array`
+Default value: `['common/**/*.properties']`
+
+It specify where is the common properties file locate, it should be relative to the locale's folder. Normally, this value should not be changed just accept the default value is enough.
+
+#### options.scriptsPropsSrc
+Type: `Array`
+Default value: `['common/**/*.properties']`
+
+It specify where is the scripts properties file locate, it also should be relative to the locale's folder. Normally, this value should not be changed just accept the default value is enough.
+
+#### options.scriptsPropsFileName
+Type: `Array`
+Default value: `'i18nPropsForScripts'`
+
+It specify the generated javascript properties file name.
+
+#### options.getTemplateFilePath
+Type: `Function`
+Returned value type: `String`
+
+It return the template file path in deployment folder structure, make sure the returned template file path should be in the same folder with the associated properties file like below:
+
+```javascript
+build-dev/resources/shape/<appName>/i18n/<locale>/tempaltes/
+                                                           --header.poperties
+                                                           --header.dust
+ ```
+
+The key point in this example is **the dust template file must be put together with the properties file in the same folder**.
+
+#### options.getScriptsPropsFilePath
+Type: `Function`
+Returned value type: `String`
+
+It return the generated javascript properties file path in deployment folder structure. Normally this is not recommended to use.
+
+#### options.getLocaleFromFilePath
+Type: `Function`
+Returned value type: `String`
+
+It return the locale value from the template file path. Normally this is not recommended to use.
 
 ### Usage Examples
 
-#### Default Options
-In this example, the default options are used to do something with whatever. So if the `testing` file has the content `Testing` and the `123` file had the content `1 2 3`, the generated result would be `Testing, 1 2 3.`
+#### Custom Options
+The exmaple below is coming from `https://github.corp.ebay.com/rchavan/app-sellflow/tree/selli18n`.
 
 ```js
-grunt.initConfig({
-  sh_precompile: {
-    options: {},
-    files: {
-      'dest/default_options': ['src/testing', 'src/123'],
+meventdev: {
+    options: {
+        localesRootPath: '<%= buildDevPath %><%= multiFeatureI18nPath %>',
+        implementedLocalesList: ['en-us', 'en-gb'],
+        commonPropsSrc: ['common/**/*.properties'],
+        scriptsPropsSrc: ['scripts/**/*.properties'],
+        scriptsPropsFileName: '<%= scriptsPropsFileName %>',
+        getTemplateFilePath: function (settings){
+            var localesRootPath = settings.localesRootPath,
+                locale = settings.locale,
+                filepath = settings.filepath,
+                templatespath = '',
+                destpath = '';
+            
+            templatespath = filepath.split(sep).slice(2).join(sep);
+            destpath = path.join(localesRootPath, locale, templatespath);
+
+            return destpath;
+        }
     },
-  },
-});
+    src: ['app/multi-event/templates/**/*.dust']
+}
 ```
 
-#### Custom Options
-In this example, custom options are used to do something else with whatever else. So if the `testing` file has the content `Testing` and the `123` file had the content `1 2 3`, the generated result in this case would be `Testing: 1 2 3 !!!`
+And here is another exmaple which is coming from `https://github.corp.ebay.com/rchavan/app-sellflow/tree/selli18n`.
 
 ```js
-grunt.initConfig({
-  sh_precompile: {
-    options: {
-      separator: ': ',
-      punctuation: ' !!!',
+dev:{
+    options:{
+        localesRootPath: '<%= buildDevPath %><%= localesRootPath %>',
+        commonPropsSrc: ['common/**/*.properties'],
+        scriptsPropsSrc: ['scripts/**/*.properties'],
+        scriptsPropsFileName: '<%= scriptsPropsFileName %>'
     },
-    files: {
-      'dest/default_options': ['src/testing', 'src/123'],
-    },
-  },
-});
+    src: ['app/templates/**/*.dust']
+}
 ```
 
 ## Contributing
