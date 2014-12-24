@@ -39,36 +39,42 @@ grunt.initConfig({
 
 #### options.localesRootPath
 Type: `String`
+
 Default value: no default value, this config option is required
 
 A string value, normally it should point to where the i18n/locale folder in the deployment build environment, this value will be like **build-dev/resources/shape/i18n**.
 
 #### options.implementedLocalesList
 Type: `Array`
+
 Default value: no default value, this config option is required
 
 It specify the implemented locales list for current application.
 
 #### options.commonPropsSrc
 Type: `Array`
+
 Default value: `['common/**/*.properties']`
 
 It specify where is the common properties file locate, it should be relative to the locale's folder. Normally, this value should not be changed just accept the default value is enough.
 
 #### options.scriptsPropsSrc
 Type: `Array`
+
 Default value: `['common/**/*.properties']`
 
 It specify where is the scripts properties file locate, it also should be relative to the locale's folder. Normally, this value should not be changed just accept the default value is enough.
 
 #### options.scriptsPropsFileName
 Type: `Array`
+
 Default value: `'i18nPropsForScripts'`
 
 It specify the generated javascript properties file name.
 
 #### options.getTemplateFilePath
 Type: `Function`
+
 Returned value type: `String`
 
 It return the template file path in deployment folder structure, make sure the returned template file path should be in the same folder with the associated properties file like below:
@@ -83,12 +89,14 @@ The key point in this example is **the dust template file must be put together w
 
 #### options.getScriptsPropsFilePath
 Type: `Function`
+
 Returned value type: `String`
 
 It return the generated javascript properties file path in deployment folder structure. Normally this is not recommended to use.
 
 #### options.getLocaleFromFilePath
 Type: `Function`
+
 Returned value type: `String`
 
 It return the locale value from the template file path. Normally this is not recommended to use.
