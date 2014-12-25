@@ -94,30 +94,55 @@ module.exports = function(grunt) {
                 return new Array(num).join(' ');
             },
 
-            _convertStringIfBoolean: function (original) {
-                var str;
-                if (original && typeof original === "string") {
-                    str = original.toLowerCase().trim();
-                    return (str === "true" || str === "false") ? (str === "true") : original;
-                }
-                return original;
+            convertJson: function (json){
+                var obj = {},
+                    _this = this;
+
+                _.each(json, function (val, key, list){
+                    obj[key] = _this._convertStringIfBooleanOrNumber(val);
+                });
+
+                return obj;
             },
 
-            _convertStringIfNumber: function (original) {
-                var str, num;
-                if (original && typeof original === "string") {
-                    str = original.toLowerCase().trim();
-                    num = Number(str);
-                    return isNaN(num) ? original : num;
+            _convertStringIfBooleanOrNumber: function (original) {
+                if (original && _.isString(original)) {
+                    if (original === "true") {
+                        return true;
+                    }
+                    if (original === "false"){
+                        return false;
+                    }
+                    try {
+                        if (this._isNumeric(original)) {
+                            return parseFloat(original);
+                        }
+                        return original;
+                    }
+                    catch (e){
+                        return original;
+                    }
                 }
-                return original;
+                else {
+                    return original;
+                }
+            },
+
+            // http://stackoverflow.com/questions/18082/validate-decimal-numbers-in-javascript-isnumeric
+            // http://rosettacode.org/wiki/Determine_if_a_string_is_numeric#JavaScript
+            _isNumeric: function (n) {
+                return !isNaN(parseFloat(n)) && isFinite(n);
             },
 
             getLocaleFromFilePath: function(filePath, localesRootPath){
-                var relativePath = path.relative(localesRootPath, filePath),
-                    locale = relativePath.split(sep)[0];
+                var locale = '';
 
-                  return locale;
+                filePath = path.normalize(filePath);
+                locale = _.find(this.localesList, function (val, idx, list){
+                    return filePath.indexOf(sep + val + sep) > 0;
+                });
+
+                return locale;
             },
 
             getNormalizedLocale: function(locale) {
@@ -177,6 +202,7 @@ module.exports = function(grunt) {
 
                     commonPropsFileArr.forEach(function(file, idx){
                         var jsonObj = grunt.file.exists(file) ? parser.read(file) : {};
+                        jsonObj = _this.convertJson(jsonObj);
                         commonLocalePropsJson = _.extend({}, commonLocalePropsJson, jsonObj);
                     });
 
@@ -193,6 +219,7 @@ module.exports = function(grunt) {
 
                     scriptsPropsFileArr.forEach(function(file, idx){
                         var jsonObj = grunt.file.exists(file) ? parser.read(file) : {};
+                        jsonObj = _this.convertJson(jsonObj);
                         scriptsLocalePropsJson = _.extend({}, scriptsLocalePropsJson, jsonObj);
                     });
 
@@ -220,14 +247,13 @@ module.exports = function(grunt) {
                     var commonPropsJson = {},
                         scriptsPropsJson = {},
                         content = '',
-                        destPath = path.join(localesRootPath, locale, scriptsPropsFileName + '.js');
+                        destPath = '';
 
-                    if(_.isFunction(getScriptsPropsFilePath)){
-                        destPath = getScriptsPropsFilePath({
-                            locale: locale,
-                            options: options
-                        });
-                    }
+                    destPath = getScriptsPropsFilePath({
+                        localesRootPath: localesRootPath,
+                        locale: locale,
+                        scriptsPropsFileName: scriptsPropsFileName
+                    });
 
                     _.some(commonPropsJsonList, function (obj, idx, list){
                         if(obj[locale]){
@@ -285,17 +311,11 @@ module.exports = function(grunt) {
 
                     localesList.forEach(function(locale, idx) {
                         
-                        destpath = path.join(localesRootPath, locale, templatespath);
-
-                        if(_.isFunction(getTemplateFilePath)){
-                            
-                            destpath = getTemplateFilePath({
+                        destpath = getTemplateFilePath({
                                 localesRootPath: localesRootPath,
                                 locale: locale,
                                 filepath: srcpath
-                            });
-
-                        }
+                        });
                         
                         grunt.verbose.writeln('[precompile] ==== src template path in deployment folder: ', destpath);
 
@@ -328,6 +348,8 @@ module.exports = function(grunt) {
                         isPropsExists = grunt.file.exists(propsFilePath),
                         propsJSON = isPropsExists ? parser.read(propsFilePath) : {};
 
+                    propsJSON = _this.convertJson(propsJSON);
+
                     return {
                         dustFilePath: dustFilePath,
                         dustFileContent: dustFileContent,
@@ -346,10 +368,6 @@ module.exports = function(grunt) {
                         locale = _this.getLocaleFromFilePath(dustFilePath, localesRootPath),
                         commonPropsJson = {},
                         ret = '';
-                    
-                    if(_.isFunction(options.getLocaleFromFilePath)){
-                        locale = options.getLocaleFromFilePath(dustFilePath, localesRootPath);
-                    }
 
                     commonPropsJsonList.forEach(function(obj){
                         if(obj[locale]){
@@ -402,9 +420,20 @@ module.exports = function(grunt) {
                 this.generateScriptsProps(options);
                 this.copyTemplateFiles(options);
                 this.generateLocalizedTemplates(options);
+            },
+
+            checkRequiredConfig: function (task){
+                var requiredOptions = ['localesRootPath', 'implementedLocalesList', 'getTemplateFilePath', 'getScriptsPropsFilePath'];
+
+                task.requiresConfig.apply(task, _.map(requiredOptions, function (val, idx, list){
+                    return [task.name, task.target, 'options', val].join('.');
+                }));
             }
 
         };
+
+        // Before running this task, firstly make sure all required config options has been specified.
+        util.checkRequiredConfig(this);
 
         // Initialize all of the variable values
         util.init(options);

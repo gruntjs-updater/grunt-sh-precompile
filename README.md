@@ -40,42 +40,21 @@ grunt.initConfig({
 #### options.localesRootPath
 Type: `String`
 
-Default value: no default value, this config option is required
+Default value: no default value, this config option is **`required`**
 
 A string value, normally it should point to where the i18n/locale folder in the deployment build environment, this value will be like **build-dev/resources/shape/i18n**.
 
 #### options.implementedLocalesList
 Type: `Array`
 
-Default value: no default value, this config option is required
+Default value: no default value, this config option is **`required`**
 
 It specify the implemented locales list for current application.
-
-#### options.commonPropsSrc
-Type: `Array`
-
-Default value: `['common/**/*.properties']`
-
-It specify where is the common properties file locate, it should be relative to the locale's folder. Normally, this value should not be changed just accept the default value is enough.
-
-#### options.scriptsPropsSrc
-Type: `Array`
-
-Default value: `['common/**/*.properties']`
-
-It specify where is the scripts properties file locate, it also should be relative to the locale's folder. Normally, this value should not be changed just accept the default value is enough.
-
-#### options.scriptsPropsFileName
-Type: `Array`
-
-Default value: `'i18nPropsForScripts'`
-
-It specify the generated javascript properties file name.
 
 #### options.getTemplateFilePath
 Type: `Function`
 
-Returned value type: `String`
+Returned value type: `String`, this is **`required`**
 
 It return the template file path in deployment folder structure, make sure the returned template file path should be in the same folder with the associated properties file like below:
 
@@ -90,16 +69,30 @@ The key point in this example is **the dust template file must be put together w
 #### options.getScriptsPropsFilePath
 Type: `Function`
 
-Returned value type: `String`
+Returned value type: `String`, this is **`required`**
 
 It return the generated javascript properties file path in deployment folder structure. Normally this is not recommended to use.
 
-#### options.getLocaleFromFilePath
-Type: `Function`
+#### options.commonPropsSrc
+Type: `Array`
 
-Returned value type: `String`
+Default value: `['common/**/*.properties']`, this is **`optional`**
 
-It return the locale value from the template file path. Normally this is not recommended to use.
+It specify where is the common properties file locate, it should be relative to the locale's folder. Normally, this value should not be changed just accept the default value is enough.
+
+#### options.scriptsPropsSrc
+Type: `Array`
+
+Default value: `['common/**/*.properties']`, this is **`optional`**
+
+It specify where is the scripts properties file locate, it also should be relative to the locale's folder. Normally, this value should not be changed just accept the default value is enough.
+
+#### options.scriptsPropsFileName
+Type: `Array`
+
+Default value: `'i18nPropsForScripts'`, this is **`optional`**
+
+It specify the generated javascript properties file name.
 
 ### Usage Examples
 
@@ -111,10 +104,8 @@ meventdev: {
     options: {
         localesRootPath: '<%= buildDevPath %><%= multiFeatureI18nPath %>',
         implementedLocalesList: ['en-us', 'en-gb'],
-        commonPropsSrc: ['common/**/*.properties'],
-        scriptsPropsSrc: ['scripts/**/*.properties'],
         scriptsPropsFileName: '<%= scriptsPropsFileName %>',
-        getTemplateFilePath: function (settings){
+        getTemplateFilePath: function (settings) {
             var localesRootPath = settings.localesRootPath,
                 locale = settings.locale,
                 filepath = settings.filepath,
@@ -123,6 +114,16 @@ meventdev: {
             
             templatespath = filepath.split(sep).slice(2).join(sep);
             destpath = path.join(localesRootPath, locale, templatespath);
+
+            return destpath;
+        },
+        getScriptsPropsFilePath: function (settings) {
+            var localesRootPath = settings.localesRootPath,
+                locale = settings.locale,
+                scriptsPropsFileName = settings.scriptsPropsFileName,
+                destpath = '';
+            
+            destpath = path.join(localesRootPath, locale, scriptsPropsFileName + '.js');
 
             return destpath;
         }
@@ -138,9 +139,29 @@ dev:{
     options:{
         implementedLocalesList: ['en-us', 'en-gb', 'de-de'],
         localesRootPath: '<%= buildDevPath %><%= localesRootPath %>',
-        commonPropsSrc: ['common/**/*.properties'],
-        scriptsPropsSrc: ['scripts/**/*.properties'],
-        scriptsPropsFileName: '<%= scriptsPropsFileName %>'
+        scriptsPropsFileName: '<%= scriptsPropsFileName %>',
+        getTemplateFilePath: function (settings) {
+            var localesRootPath = settings.localesRootPath,
+                locale = settings.locale,
+                filepath = settings.filepath,
+                templatespath = '',
+                destpath = '';
+            
+            templatespath = filepath.split(sep).slice(1).join(sep);
+            destpath = path.join(localesRootPath, locale, templatespath);
+
+            return destpath;
+        },
+        getScriptsPropsFilePath: function (settings) {
+            var localesRootPath = settings.localesRootPath,
+                locale = settings.locale,
+                scriptsPropsFileName = settings.scriptsPropsFileName,
+                destpath = '';
+            
+            destpath = path.join(localesRootPath, locale, scriptsPropsFileName + '.js');
+
+            return destpath;
+        }
     },
     src: ['app/templates/**/*.dust']
 }
