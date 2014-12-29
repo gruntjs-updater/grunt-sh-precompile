@@ -34,6 +34,7 @@ module.exports = function(grunt) {
             _ = require('underscore'),
             parser = require('properties-parser'), // Please refer to https://github.com/xavi-/node-properties-parser
             i18nPropsForScriptsTemplateFile = '../i18nPropsForScripts.tpl',
+            itself = this,
             util = {};
 
         util = {
@@ -45,6 +46,16 @@ module.exports = function(grunt) {
             commonPropsJsonList: [],
             // scripts properties JSON list contains the locale - scriptsPropsJson, similar with the variable commonPropsJsonList
             scriptsPropsJsonList: [],
+            // locales root path in deployment folder
+            localesRootPath: '',
+
+            getLocalesRootPath: function (){
+                return this.localesRootPath;
+            },
+
+            setLocalesRootPath: function (filepath){
+                this.localesRootPath = filepath;
+            },
 
             getLocalesList: function (){
                 // This will return the reference to the localesList, so any modification to this returned object will reflect to the original localesList
@@ -134,7 +145,7 @@ module.exports = function(grunt) {
                 return !isNaN(parseFloat(n)) && isFinite(n);
             },
 
-            getLocaleFromFilePath: function(filePath, localesRootPath){
+            getLocaleFromFilePath: function(filePath){
                 var locale = '';
 
                 filePath = path.normalize(filePath);
@@ -156,18 +167,15 @@ module.exports = function(grunt) {
             // To get all of the available locales list, commonPropsJsonList, scriptsPropsJsonList
             init: function (options){
                 var _this = this,
-                    localesRootPath = options.localesRootPath,
                     scriptsPropsSrc = options.scriptsPropsSrc,
                     commonPropsSrc = options.commonPropsSrc,
                     implementedLocalesList = options.implementedLocalesList,
+                    localesRootPath = this.getLocalesRootPath(),
                     localesList = this.getLocalesList(),
                     commonPropsJsonList = this.getCommonPropsJsonList(),
                     scriptsPropsJsonList = this.getScriptsPropsJsonList();
 
-                grunt.verbose.writeln('============localesRootPath=======', localesRootPath);
-
-                // Fetch all the actually implemented locales list, 
-                // will ignore the implemented locales specified in implementedLocalesList config option if this locale actually is not implemented
+                // Fetch all the actually implemented locales list
                 fs.readdirSync(localesRootPath).forEach(function(locale){
                     locale = _this.getNormalizedLocale(locale);
                     locale = locale.toLowerCase();
@@ -235,8 +243,7 @@ module.exports = function(grunt) {
             // Combile commonPropsJson with scriptsPropsJson to generate a new sripts properties for each locale
             generateScriptsProps: function (options){
 
-                var localesRootPath = options.localesRootPath,
-                    scriptsPropsFileName = options.scriptsPropsFileName,
+                var scriptsPropsFileName = options.scriptsPropsFileName,
                     localesList = this.getLocalesList(),
                     commonPropsJsonList = this.getCommonPropsJsonList(),
                     scriptsPropsJsonList = this.getScriptsPropsJsonList(),
@@ -250,9 +257,9 @@ module.exports = function(grunt) {
                         destPath = '';
 
                     destPath = getScriptsPropsFilePath({
-                        localesRootPath: localesRootPath,
                         locale: locale,
-                        scriptsPropsFileName: scriptsPropsFileName
+                        scriptsPropsFileName: scriptsPropsFileName,
+                        task: itself
                     });
 
                     _.some(commonPropsJsonList, function (obj, idx, list){
@@ -271,7 +278,7 @@ module.exports = function(grunt) {
 
                     scriptsPropsJson = _.extend({}, commonPropsJson, scriptsPropsJson);
                     
-                    grunt.verbose.subhead('**** scriptsPropsJson', scriptsPropsJson);
+                    grunt.verbose.subhead('[precompile] **** scriptsPropsJson', scriptsPropsJson);
 
                     content = grunt.file.read(path.join(__dirname, i18nPropsForScriptsTemplateFile));
                     // Pretty print the JSON file format
@@ -289,7 +296,6 @@ module.exports = function(grunt) {
 
                 var localesList = this.getLocalesList(),
                     templatesList = this.getTemplatesList(),
-                    localesRootPath = options.localesRootPath,
                     getTemplateFilePath = options.getTemplateFilePath,
                     _this = this;
 
@@ -312,9 +318,9 @@ module.exports = function(grunt) {
                     localesList.forEach(function(locale, idx) {
                         
                         destpath = getTemplateFilePath({
-                                localesRootPath: localesRootPath,
                                 locale: locale,
-                                filepath: srcpath
+                                filepath: srcpath,
+                                task: itself
                         });
                         
                         grunt.verbose.writeln('[precompile] ==== src template path in deployment folder: ', destpath);
@@ -336,11 +342,10 @@ module.exports = function(grunt) {
             generateLocalizedTemplates: function (options){
 
                 var _this = this,
-                    localesRootPath = options.localesRootPath,
                     templatesList = this.getTemplatesList(),
                     commonPropsJsonList = this.getCommonPropsJsonList();
 
-                // grunt.log.writeln('=========templatesList', templatesList);
+                grunt.verbose.writeln(('[precompile] ==== templatesList is: ').bold, templatesList);
                 templatesList.map(function(filepath){
                     var dustFilePath = filepath,
                         dustFileContent = grunt.file.read(dustFilePath),
@@ -365,7 +370,7 @@ module.exports = function(grunt) {
                         isI18nExists = false,
                         isCommonKey = false,
                         localizedText = '',
-                        locale = _this.getLocaleFromFilePath(dustFilePath, localesRootPath),
+                        locale = _this.getLocaleFromFilePath(dustFilePath),
                         commonPropsJson = {},
                         ret = '';
 
@@ -396,7 +401,7 @@ module.exports = function(grunt) {
                             localizedText = commonPropsJson[key];
                             
                             if(_this.isEmpty(localizedText)){
-                                grunt.fail.fatal('[[ missing key: ' + (key).bold + ' ]] in file - ' + (dustFilePath).bold);
+                                grunt.fail.fatal('[precompile] ==== [[ missing key: ' + (key).bold + ' ]] in file - ' + (dustFilePath).bold);
                             }
                             else{
                                 grunt.verbose.writeln('[precompile] ==== this key [[' + (key).blue + ']] has been found in locale [[ ' + (locale).yellow + ' ]]');
@@ -416,24 +421,53 @@ module.exports = function(grunt) {
                 });
             },
 
+            checkRequiredConfig: function (){
+                var requiredOptions = [
+                    'localeFilesExpandPatterns',
+                    'implementedLocalesList', 
+                    'getTemplateFilePath', 
+                    'getScriptsPropsFilePath'
+                ];
+
+                itself.requiresConfig.apply(itself, _.map(requiredOptions, function (val, idx, list){
+                    return [itself.name, itself.target, 'options', val].join('.');
+                }));
+            },
+
+            copyLocalesPropsFiles: function (options){
+                var patterns = options.localeFilesExpandPatterns,
+                    fileListMapping = grunt.file.expandMapping(patterns.src, patterns.dest, patterns);
+
+                grunt.verbose.writeln('[precompile] ==== locale file list mapping: ', fileListMapping);
+                _.each(fileListMapping, function (obj){
+                    var src = obj.src[0],
+                        dest = obj.dest;
+
+                    if(grunt.file.isDir(src)){
+                        grunt.file.mkdir(dest);
+                    }
+                    else{
+                        grunt.file.copy(src, dest);
+                    }
+                });
+
+                // Set locales root path in deployment folder
+                this.setLocalesRootPath(patterns.dest);
+
+                grunt.verbose.writeln(('[precompile] ==== localesRootPath is: ').bold.blue, this.getLocalesRootPath());
+            },
+
             start: function (options){
                 this.generateScriptsProps(options);
                 this.copyTemplateFiles(options);
                 this.generateLocalizedTemplates(options);
-            },
-
-            checkRequiredConfig: function (task){
-                var requiredOptions = ['localesRootPath', 'implementedLocalesList', 'getTemplateFilePath', 'getScriptsPropsFilePath'];
-
-                task.requiresConfig.apply(task, _.map(requiredOptions, function (val, idx, list){
-                    return [task.name, task.target, 'options', val].join('.');
-                }));
             }
 
         };
 
         // Before running this task, firstly make sure all required config options has been specified.
-        util.checkRequiredConfig(this);
+        util.checkRequiredConfig();
+        util.copyLocalesPropsFiles(options);
 
         // Initialize all of the variable values
         util.init(options);

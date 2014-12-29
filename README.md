@@ -37,12 +37,20 @@ grunt.initConfig({
 
 ### Options
 
-#### options.localesRootPath
-Type: `String`
+#### options.localeFilesExpandPatterns
+Type: `Object`
 
 Default value: no default value, this config option is **`required`**
 
-A string value, normally it should point to where the i18n/locale folder in the deployment build environment, this value will be like **build-dev/resources/shape/i18n**.
+A object value, normally it should specify the i18n/locales folder in the app source folder and where all the soruce files should be coped into the deployment build environment, this value normally is a pattern value which can be passed into the grunt API `grunt.file.expandMapping`, one example is like below:
+
+```javascript
+localeFilesExpandPatterns: {
+    src: ['**/*.properties'],
+    cwd: 'app/multi-event/i18n',
+    dest: '<%= buildDevPath %><%= multiFeatureI18nPath %>'
+}
+```
 
 #### options.implementedLocalesList
 Type: `Array`
@@ -71,7 +79,7 @@ Type: `Function`
 
 Returned value type: `String`, this is **`required`**
 
-It return the generated javascript properties file path in deployment folder structure. Normally this is not recommended to use.
+It return the generated localized javascript properties file path in deployment folder structure. 
 
 #### options.commonPropsSrc
 Type: `Array`
@@ -102,11 +110,16 @@ The exmaple below is coming from `https://github.corp.ebay.com/rchavan/app-sellf
 ```js
 meventdev: {
     options: {
-        localesRootPath: '<%= buildDevPath %><%= multiFeatureI18nPath %>',
+        localeFilesExpandPatterns: {
+            src: ['**/*.properties'],
+            cwd: 'app/multi-event/i18n',
+            dest: '<%= buildDevPath %><%= multiFeatureI18nPath %>'
+        },
         implementedLocalesList: ['en-us', 'en-gb'],
         scriptsPropsFileName: '<%= scriptsPropsFileName %>',
         getTemplateFilePath: function (settings) {
-            var localesRootPath = settings.localesRootPath,
+            var task = settings.task,
+                localesRootPath = grunt.config.get([task.name, task.target, 'options', 'localeFilesExpandPatterns', 'dest']),
                 locale = settings.locale,
                 filepath = settings.filepath,
                 templatespath = '',
@@ -118,12 +131,15 @@ meventdev: {
             return destpath;
         },
         getScriptsPropsFilePath: function (settings) {
-            var localesRootPath = settings.localesRootPath,
+            var task = settings.task,
                 locale = settings.locale,
                 scriptsPropsFileName = settings.scriptsPropsFileName,
+                buildDevPath = grunt.config.get('buildDevPath'),
+                multiFeatureScriptsPath = grunt.config.get('multiFeatureScriptsPath'),
                 destpath = '';
-            
-            destpath = path.join(localesRootPath, locale, scriptsPropsFileName + '.js');
+
+            destpath = path.join(buildDevPath, multiFeatureScriptsPath, locale, scriptsPropsFileName + '.js');
+            grunt.verbose.subhead('[precompile] ==== scriptsPropsFilePath-----', destpath);                        
 
             return destpath;
         }
@@ -132,14 +148,17 @@ meventdev: {
 }
 ```
 
-And here is another exmaple which is coming from `https://github.corp.ebay.com/rchavan/app-sellflow/tree/selli18n`.
+And here is another exmaple which is coming from `https://github.corp.ebay.com/Stubhub/app-reference/tree/develop`.
 
 ```js
 dev:{
     options:{
+        localeFilesExpandPatterns: {
+          src: ['**/*.properties'],
+          dest: '<%= buildDevPath %><%= localesRootPath %>',
+          cwd: 'app/i18n'
+        },
         implementedLocalesList: ['en-us', 'en-gb', 'de-de'],
-        localesRootPath: '<%= buildDevPath %><%= localesRootPath %>',
-        scriptsPropsFileName: '<%= scriptsPropsFileName %>',
         getTemplateFilePath: function (settings) {
             var localesRootPath = settings.localesRootPath,
                 locale = settings.locale,
@@ -161,10 +180,11 @@ dev:{
             destpath = path.join(localesRootPath, locale, scriptsPropsFileName + '.js');
 
             return destpath;
-        }
+        },
+        scriptsPropsFileName: '<%= scriptsPropsFileName %>'
     },
     src: ['app/templates/**/*.dust']
-}
+} 
 ```
 
 ## Contributing
