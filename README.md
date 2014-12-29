@@ -160,12 +160,13 @@ dev:{
         },
         implementedLocalesList: ['en-us', 'en-gb', 'de-de'],
         getTemplateFilePath: function (settings) {
-            var localesRootPath = settings.localesRootPath,
+            var task = settings.task,
+                localesRootPath = grunt.config.get([task.name, task.target, 'options', 'localeFilesExpandPatterns', 'dest']),
                 locale = settings.locale,
                 filepath = settings.filepath,
                 templatespath = '',
                 destpath = '';
-            
+
             templatespath = filepath.split(sep).slice(1).join(sep);
             destpath = path.join(localesRootPath, locale, templatespath);
 
@@ -175,9 +176,11 @@ dev:{
             var localesRootPath = settings.localesRootPath,
                 locale = settings.locale,
                 scriptsPropsFileName = settings.scriptsPropsFileName,
+                buildDevPath = grunt.config.get('buildDevPath'),
+                featureScriptsPath = grunt.config.get('featureScriptsPath'),
                 destpath = '';
             
-            destpath = path.join(localesRootPath, locale, scriptsPropsFileName + '.js');
+            destpath = path.join(buildDevPath, featureScriptsPath, locale, scriptsPropsFileName + '.js');
 
             return destpath;
         },
