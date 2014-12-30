@@ -40,22 +40,26 @@ grunt.initConfig({
 #### options.localeFilesExpandPatterns
 Type: `Object`
 
-Default value: no default value, this config option is **`required`**
+This config option is **`required`**
 
-A object value, normally it should specify the i18n/locales folder in the app source folder and where all the soruce files should be coped into the deployment build environment, this value normally is a pattern value which can be passed into the grunt API `grunt.file.expandMapping`, one example is like below:
+An object value, normally it should specify the i18n/locales folder in the app source folder and where all the source files should be copied into the deployment build environment, this value normally is a pattern value which can be passed into the grunt API <a href="http://gruntjs.com/api/grunt.file#grunt.file.expandmapping" target="_blank">`grunt.file.expandMapping`</a>, one example is like below:
 
 ```javascript
 localeFilesExpandPatterns: {
     src: ['**/*.properties'],
     cwd: 'app/multi-event/i18n',
-    dest: '<%= buildDevPath %><%= multiFeatureI18nPath %>'
+    dest: '<%= buildDevPath %><%= multiFeatureI18nPath %>',
+    rename: function(dest, matchedSrcPath, options) {
+        return path.join(dest, matchedSrcPath);
+    }
 }
 ```
+And <a href="https://sourcegraph.com/github.com/gruntjs/grunt/.CommonJSPackage/grunt/.def/commonjs/lib/grunt/file.js/-/expandMapping" target="_blank">here</a> is a detail example about how to use the `grunt.file.expandMapping` API.
 
 #### options.implementedLocalesList
 Type: `Array`
 
-Default value: no default value, this config option is **`required`**
+This config option is **`required`**
 
 It specify the implemented locales list for current application.
 
@@ -86,14 +90,14 @@ Type: `Array`
 
 Default value: `['common/**/*.properties']`, this is **`optional`**
 
-It specify where is the common properties file locate, it should be relative to the locale's folder. Normally, this value should not be changed just accept the default value is enough.
+It specify where the common properties file locate, it should be relative to the locale's folder. Normally, this value should not be changed and app can just accept the default value.
 
 #### options.scriptsPropsSrc
 Type: `Array`
 
-Default value: `['common/**/*.properties']`, this is **`optional`**
+Default value: `['scripts/**/*.properties']`, this is **`optional`**
 
-It specify where is the scripts properties file locate, it also should be relative to the locale's folder. Normally, this value should not be changed just accept the default value is enough.
+It specify where the scripts properties file locate, it should be relative to the locale's folder. Normally, this value should not be changed and app can just accept the default value.
 
 #### options.scriptsPropsFileName
 Type: `Array`
@@ -113,7 +117,10 @@ meventdev: {
         localeFilesExpandPatterns: {
             src: ['**/*.properties'],
             cwd: 'app/multi-event/i18n',
-            dest: '<%= buildDevPath %><%= multiFeatureI18nPath %>'
+            dest: '<%= buildDevPath %><%= multiFeatureI18nPath %>',
+            rename: function(dest, matchedSrcPath, options) {
+                return path.join(dest, matchedSrcPath);
+            }
         },
         implementedLocalesList: ['en-us', 'en-gb'],
         scriptsPropsFileName: '<%= scriptsPropsFileName %>',
@@ -154,9 +161,12 @@ And here is another exmaple which is coming from `https://github.corp.ebay.com/S
 dev:{
     options:{
         localeFilesExpandPatterns: {
-          src: ['**/*.properties'],
-          dest: '<%= buildDevPath %><%= localesRootPath %>',
-          cwd: 'app/i18n'
+            src: ['**/*.properties'],
+            dest: '<%= buildDevPath %><%= localesRootPath %>',
+            cwd: 'app/i18n',
+            rename: function(dest, matchedSrcPath, options) {
+                return path.join(dest, matchedSrcPath);
+            }
         },
         implementedLocalesList: ['en-us', 'en-gb', 'de-de'],
         getTemplateFilePath: function (settings) {
