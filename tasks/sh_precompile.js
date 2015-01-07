@@ -170,6 +170,7 @@ module.exports = function(grunt) {
                     scriptsPropsSrc = options.scriptsPropsSrc,
                     commonPropsSrc = options.commonPropsSrc,
                     implementedLocalesList = options.implementedLocalesList,
+                    keyPrefix = options.keyPrefix,
                     localesRootPath = this.getLocalesRootPath(),
                     localesList = this.getLocalesList(),
                     commonPropsJsonList = this.getCommonPropsJsonList(),
@@ -210,6 +211,15 @@ module.exports = function(grunt) {
 
                     commonPropsFileArr.forEach(function(file, idx){
                         var jsonObj = grunt.file.exists(file) ? parser.read(file) : {};
+
+                        // Validate whether the key in the common properties file conform to the constraints
+                        if(keyPrefix){
+                            _this.validatePropsKey(options, {
+                                json: jsonObj,
+                                file: file
+                            });
+                        }
+
                         jsonObj = _this.convertJson(jsonObj);
                         commonLocalePropsJson = _.extend({}, commonLocalePropsJson, jsonObj);
                     });
@@ -227,6 +237,15 @@ module.exports = function(grunt) {
 
                     scriptsPropsFileArr.forEach(function(file, idx){
                         var jsonObj = grunt.file.exists(file) ? parser.read(file) : {};
+
+                        // Validate whether the key in the script properties file conform to the constraints
+                        if(keyPrefix){
+                            _this.validatePropsKey(options, {
+                                json: jsonObj,
+                                file: file
+                            });
+                        }
+
                         jsonObj = _this.convertJson(jsonObj);
                         scriptsLocalePropsJson = _.extend({}, scriptsLocalePropsJson, jsonObj);
                     });
@@ -342,6 +361,7 @@ module.exports = function(grunt) {
             generateLocalizedTemplates: function (options){
 
                 var _this = this,
+                    keyPrefix = options.keyPrefix,
                     templatesList = this.getTemplatesList(),
                     commonPropsJsonList = this.getCommonPropsJsonList();
 
@@ -351,21 +371,29 @@ module.exports = function(grunt) {
                         dustFileContent = grunt.file.read(dustFilePath),
                         propsFilePath = dustFilePath.replace(dustRegExp, '.properties'),
                         isPropsExists = grunt.file.exists(propsFilePath),
-                        propsJSON = isPropsExists ? parser.read(propsFilePath) : {};
+                        templatesPropsJSON = isPropsExists ? parser.read(propsFilePath) : {};
 
-                    propsJSON = _this.convertJson(propsJSON);
+                    // Validate whether the key in the dust templates properties file conform to the constraints
+                    if(keyPrefix){
+                        _this.validatePropsKey(options, {
+                            json: templatesPropsJSON,
+                            file: propsFilePath
+                        });
+                    }
+
+                    templatesPropsJSON = _this.convertJson(templatesPropsJSON);
 
                     return {
                         dustFilePath: dustFilePath,
                         dustFileContent: dustFileContent,
                         propsFilePath: propsFilePath,
-                        propsJSON: propsJSON
+                        templatesPropsJSON: templatesPropsJSON
                     };
 
                 }).forEach(function(obj, idx){
                     var content = obj.dustFileContent,
                         dustFilePath = obj.dustFilePath,
-                        propsJSON = obj.propsJSON,
+                        templatesPropsJSON = obj.templatesPropsJSON,
                         propsFilePath = obj.propsFilePath,
                         isI18nExists = false,
                         isCommonKey = false,
@@ -394,7 +422,7 @@ module.exports = function(grunt) {
                         
                         // Fetch the localized message associated with this key, firstly search in the associated dust template
                         // if not found, then search it in the common properties files, if still not found then abort the grunt task.
-                        localizedText = propsJSON[key];
+                        localizedText = templatesPropsJSON[key];
                         
                         if(_this.isEmpty(localizedText)){
 
@@ -419,6 +447,19 @@ module.exports = function(grunt) {
                         grunt.file.write(dustFilePath, ret);
                     }
                 });
+            },
+
+            validatePropsKey: function (options, settings){
+                var keyPrefix = options.keyPrefix + '.',
+                    json = settings.json,
+                    propsFilePath = settings.file;
+
+                _.each(_.keys(json), function (key, idx, list){
+                    if(key.indexOf(keyPrefix) !== 0){
+                        grunt.fail.fatal('[precompile] ==== [[ this key: ' + (key).bold + ' ]] in properties file - ' + (propsFilePath).bold + ' does not conform to the key constrains');
+                    }
+                });
+
             },
 
             checkRequiredConfig: function (){
