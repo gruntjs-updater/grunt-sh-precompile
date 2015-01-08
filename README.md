@@ -85,6 +85,13 @@ Returned value type: `String`, this is **`required`**
 
 It return the generated localized javascript properties file path in deployment folder structure. 
 
+#### options.keyPrefix
+Type: `String`
+
+This config option is **`required`**
+
+It specify the keyPrefix in all properties files under i18n folder to make sure all the properties key have to conform to the key constrains. 
+
 #### options.commonPropsSrc
 Type: `Array`
 
@@ -149,7 +156,8 @@ meventdev: {
             grunt.verbose.subhead('[precompile] ==== scriptsPropsFilePath-----', destpath);                        
 
             return destpath;
-        }
+        },
+        keyPrefix: '<%= config.appName %>' + 'multiEvent'
     },
     src: ['app/multi-event/templates/**/*.dust']
 }
@@ -161,30 +169,29 @@ And here is another exmaple which is coming from `https://github.corp.ebay.com/S
 dev:{
     options:{
         localeFilesExpandPatterns: {
-            src: ['**/*.properties'],
-            dest: '<%= buildDevPath %><%= localesRootPath %>',
-            cwd: 'app/i18n',
-            rename: function(dest, matchedSrcPath, options) {
-                return path.join(dest, matchedSrcPath);
-            }
+          src: ['**/*.properties'],
+          dest: '<%= buildDevPath %><%= i18nRootPath %>',
+          cwd: 'app/i18n',
+          rename: function(dest, matchedSrcPath, options) {
+              return path.join(dest, matchedSrcPath);
+          }
         },
         implementedLocalesList: ['en-us', 'en-gb', 'de-de'],
         getTemplateFilePath: function (settings) {
             var task = settings.task,
-                localesRootPath = grunt.config.get([task.name, task.target, 'options', 'localeFilesExpandPatterns', 'dest']),
+                i18nRootPath = grunt.config.get([task.name, task.target, 'options', 'localeFilesExpandPatterns', 'dest']),
                 locale = settings.locale,
                 filepath = settings.filepath,
                 templatespath = '',
                 destpath = '';
 
             templatespath = filepath.split(sep).slice(1).join(sep);
-            destpath = path.join(localesRootPath, locale, templatespath);
+            destpath = path.join(i18nRootPath, locale, templatespath);
 
             return destpath;
         },
         getScriptsPropsFilePath: function (settings) {
-            var localesRootPath = settings.localesRootPath,
-                locale = settings.locale,
+            var locale = settings.locale,
                 scriptsPropsFileName = settings.scriptsPropsFileName,
                 buildDevPath = grunt.config.get('buildDevPath'),
                 featureScriptsPath = grunt.config.get('featureScriptsPath'),
@@ -194,6 +201,7 @@ dev:{
 
             return destpath;
         },
+        keyPrefix: '<%= config.appName %>',
         scriptsPropsFileName: '<%= scriptsPropsFileName %>'
     },
     src: ['app/templates/**/*.dust']

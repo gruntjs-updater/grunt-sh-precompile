@@ -450,9 +450,13 @@ module.exports = function(grunt) {
             },
 
             validatePropsKey: function (options, settings){
-                var keyPrefix = options.keyPrefix + '.',
+                var keyPrefix = options.keyPrefix,
                     json = settings.json,
                     propsFilePath = settings.file;
+
+                if(!this.endsWith(keyPrefix, '.')){
+                    keyPrefix = keyPrefix + '.'
+                }
 
                 _.each(_.keys(json), function (key, idx, list){
                     if(key.indexOf(keyPrefix) !== 0){
@@ -467,7 +471,8 @@ module.exports = function(grunt) {
                     'localeFilesExpandPatterns',
                     'implementedLocalesList', 
                     'getTemplateFilePath', 
-                    'getScriptsPropsFilePath'
+                    'getScriptsPropsFilePath',
+                    'keyPrefix'
                 ];
 
                 itself.requiresConfig.apply(itself, _.map(requiredOptions, function (val, idx, list){
