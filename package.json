@@ -14,7 +14,7 @@
   "bugs": {
     "url": ""
   },
-  publishConfig: {
+  "publishConfig": {
 	"registry": "http://registry.npmjs.dev.ebay.com:5984/"
   },
   "licenses": [
