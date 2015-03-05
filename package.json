@@ -14,6 +14,9 @@
   "bugs": {
     "url": ""
   },
+  publishConfig: {
+	"registry": "http://registry.npmjs.dev.ebay.com:5984/"
+  },
   "licenses": [
     {
       "type": "MIT",
