@@ -92,6 +92,36 @@ This config option is **`required`**
 
 It specify the keyPrefix in all properties files under i18n folder to make sure all the properties key have to conform to the key constrains. 
 
+#### options.i18nPropsConfig
+Type: `Object`
+
+No default value, this is **`optional`**
+
+It specify the module definition of generated i18n properties file, this object can contains two fields, one is `i18nPropsId` and the other is `i18nPropsDeps`. See below exmaple:
+
+If the options has the following config
+
+```javascript
+options: {
+    ...
+    i18nPropsConfig: {
+        i18nPropsId: 'geolocation-i18nProps'
+    }
+    ...
+}
+```
+
+Then the generated i18nPropsForScripts.js will be like below:
+```javascript
+define('geolocation-i18nProps', [], function(){
+    return {
+        "common.components.geolocation.defaultLink.text": "all locations",
+        "common.components.geolocation.popular-in.text": "Popular events in&nbsp;",
+        "common.components.geolocation.popular-near.text": "Popular events near&nbsp;"
+    };
+});
+```
+
 #### options.commonPropsSrc
 Type: `Array`
 

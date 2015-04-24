@@ -258,12 +258,16 @@ module.exports = function(grunt) {
             // Combile commonPropsJson with scriptsPropsJson to generate a new sripts properties for each locale
             generateScriptsProps: function(options) {
 
-                var scriptsPropsFileName = options.scriptsPropsFileName,
-                    localesList = this.getLocalesList(),
-                    commonPropsJsonList = this.getCommonPropsJsonList(),
-                    scriptsPropsJsonList = this.getScriptsPropsJsonList(),
-                    getScriptsPropsFilePath = options.getScriptsPropsFilePath,
-                    _this = this;
+                var scriptsPropsFileName = options.scriptsPropsFileName;
+                var i18nPropsConfig = options.i18nPropsConfig || {};
+                var i18nPropsId = i18nPropsConfig.i18nPropsId;
+                var i18nPropsDeps = i18nPropsConfig.i18nPropsDeps || [];
+                var i18nPropsDef = '';
+                var localesList = this.getLocalesList();
+                var commonPropsJsonList = this.getCommonPropsJsonList();
+                var scriptsPropsJsonList = this.getScriptsPropsJsonList();
+                var getScriptsPropsFilePath = options.getScriptsPropsFilePath;
+                var _this = this;
 
                 localesList.forEach(function(locale) {
                     var commonPropsJson = {},
@@ -296,12 +300,24 @@ module.exports = function(grunt) {
                     grunt.verbose.subhead('[precompile] **** scriptsPropsJson', scriptsPropsJson);
 
                     content = grunt.file.read(path.join(__dirname, i18nPropsForScriptsTemplateFile));
+
+                    // replace the {{i18nPropsDef}} with real i18n props module definition
+                    if (i18nPropsId) {
+                        i18nPropsDef = "'" + i18nPropsId + "', " + JSON.stringify(i18nPropsDeps) + ', ';
+                    }
+                    else {
+                        i18nPropsDef = '';
+                    }
+
+                    content = content.replace('{{i18nPropsDef}}', i18nPropsDef);
+
                     // Pretty print the JSON file format
                     scriptsPropsJson = JSON.stringify(scriptsPropsJson, null, 4);
                     scriptsPropsJson = scriptsPropsJson.replace(new RegExp(eol + _this.createSpace(4), 'mg'), eol + _this.createSpace(8));
                     scriptsPropsJson = scriptsPropsJson.replace('}', _this.createSpace(4) + '}');
 
                     content = content.replace('{{i18nPropsJson}}', scriptsPropsJson);
+
                     grunt.file.write(destPath, content);
 
                 });
