@@ -23,10 +23,6 @@ module.exports = function(grunt) {
             filesSrc = this.filesSrc,
             i18nRegExp = /\{@i18n\s+?key=["](.+?)["]\s*?\/}/gmi,
             dustRegExp = /\.dust$/,
-            jsRegExp = /\.js$/,
-            propsRegExp = /\.properties$/,
-            multiLineRegExp = /\\\r?\n\s*/g,
-            missingKeyRegExp = /(\{\{.*\}\})/,
             path = require('path'),
             sep = path.sep,
             eol = require('os').EOL,
@@ -49,45 +45,45 @@ module.exports = function(grunt) {
             // locales root path in deployment folder
             localesRootPath: '',
 
-            getLocalesRootPath: function (){
+            getLocalesRootPath: function() {
                 return this.localesRootPath;
             },
 
-            setLocalesRootPath: function (filepath){
+            setLocalesRootPath: function(filepath) {
                 this.localesRootPath = filepath;
             },
 
-            getLocalesList: function (){
+            getLocalesList: function() {
                 // This will return the reference to the localesList, so any modification to this returned object will reflect to the original localesList
                 // the same rule also apply to the templatesList, commonPropsJsonList and scriptsPropsJsonList
                 return this.localesList;
             },
 
-            setLocalesList: function (list){
+            setLocalesList: function(list) {
                 this.localesList = list;
             },
 
-            getTemplatesList: function (){
+            getTemplatesList: function() {
                 return this.templatesList;
             },
 
-            setTemplatesList: function (list){
+            setTemplatesList: function(list) {
                 this.templatesList = list;
             },
 
-            getCommonPropsJsonList: function (){
+            getCommonPropsJsonList: function() {
                 return this.commonPropsJsonList;
             },
 
-            setCommonPropsJsonList: function (list){
+            setCommonPropsJsonList: function(list) {
                 this.commonPropsJsonList = list;
             },
 
-            getScriptsPropsJsonList: function (){
+            getScriptsPropsJsonList: function() {
                 return this.scriptsPropsJsonList;
             },
 
-            setScriptsPropsJsonList: function (list){
+            setScriptsPropsJsonList: function(list) {
                 this.scriptsPropsJsonList = list;
             },
 
@@ -95,33 +91,33 @@ module.exports = function(grunt) {
                 return str.substring(str.length - suffix.length, str.length) === suffix;
             },
 
-            isEmpty: function(val){
+            isEmpty: function(val) {
                 return (typeof val === 'undefined') || val === null;
             },
 
-            createSpace: function(num){
+            createSpace: function(num) {
                 // Default create 4 spaces
                 num = (num || 4) + 1;
                 return new Array(num).join(' ');
             },
 
-            convertJson: function (json){
+            convertJson: function(json) {
                 var obj = {},
                     _this = this;
 
-                _.each(json, function (val, key, list){
+                _.each(json, function(val, key) {
                     obj[key] = _this._convertStringIfBooleanOrNumber(val);
                 });
 
                 return obj;
             },
 
-            _convertStringIfBooleanOrNumber: function (original) {
+            _convertStringIfBooleanOrNumber: function(original) {
                 if (original && _.isString(original)) {
-                    if (original === "true") {
+                    if (original === 'true') {
                         return true;
                     }
-                    if (original === "false"){
+                    if (original === 'false') {
                         return false;
                     }
                     try {
@@ -130,7 +126,7 @@ module.exports = function(grunt) {
                         }
                         return original;
                     }
-                    catch (e){
+                    catch (e) {
                         return original;
                     }
                 }
@@ -141,15 +137,15 @@ module.exports = function(grunt) {
 
             // http://stackoverflow.com/questions/18082/validate-decimal-numbers-in-javascript-isnumeric
             // http://rosettacode.org/wiki/Determine_if_a_string_is_numeric#JavaScript
-            _isNumeric: function (n) {
+            _isNumeric: function(n) {
                 return !isNaN(parseFloat(n)) && isFinite(n);
             },
 
-            getLocaleFromFilePath: function(filePath){
+            getLocaleFromFilePath: function(filePath) {
                 var locale = '';
 
                 filePath = path.normalize(filePath);
-                locale = _.find(this.localesList, function (val, idx, list){
+                locale = _.find(this.localesList, function(val) {
                     return filePath.indexOf(sep + val + sep) > 0;
                 });
 
@@ -160,12 +156,12 @@ module.exports = function(grunt) {
                 return !!locale ? locale : this.getDefaultLocale();
             },
 
-            getDefaultLocale: function(){
+            getDefaultLocale: function() {
                 return 'en-us';
             },
 
             // To get all of the available locales list, commonPropsJsonList, scriptsPropsJsonList
-            init: function (options){
+            init: function(options) {
                 var _this = this,
                     scriptsPropsSrc = options.scriptsPropsSrc,
                     commonPropsSrc = options.commonPropsSrc,
@@ -177,17 +173,17 @@ module.exports = function(grunt) {
                     scriptsPropsJsonList = this.getScriptsPropsJsonList();
 
                 // Fetch all the actually implemented locales list
-                fs.readdirSync(localesRootPath).forEach(function(locale){
+                fs.readdirSync(localesRootPath).forEach(function(locale) {
                     locale = _this.getNormalizedLocale(locale);
                     locale = locale.toLowerCase();
-                    
-                    if(_.contains(implementedLocalesList, locale)){
+
+                    if (_.contains(implementedLocalesList, locale)) {
                         localesList.push(locale);
                     }
 
                 });
 
-                _.each(localesList, function(locale, idx, list){
+                _.each(localesList, function(locale) {
                     var commonLocalePropsSrc = [],
                         commonPropsFileArr = [],
                         commonLocalePropsJson = {},
@@ -201,19 +197,19 @@ module.exports = function(grunt) {
                     ** constructure the commonPropsJsonList for each locale
                     */
                     // Re-constructure the commonPropsSrc, actually this is an array, but we need to re-build the common properties file pattern
-                    // Since by default, all file paths are relative to the `Gruntfile`, please have a reference: 
+                    // Since by default, all file paths are relative to the `Gruntfile`, please have a reference:
                     // http://gruntjs.com/api/grunt.file#grunt.file.setbase and http://gruntjs.com/api/grunt.file#grunt.file.expand
-                    commonLocalePropsSrc = commonPropsSrc.map(function(commonPropsFilePattern, idx){
+                    commonLocalePropsSrc = commonPropsSrc.map(function(commonPropsFilePattern) {
                         return path.join(localesRootPath, locale, commonPropsFilePattern);
                     });
 
                     commonPropsFileArr = grunt.file.expand(commonLocalePropsSrc);
 
-                    commonPropsFileArr.forEach(function(file, idx){
+                    commonPropsFileArr.forEach(function(file) {
                         var jsonObj = grunt.file.exists(file) ? parser.read(file) : {};
 
                         // Validate whether the key in the common properties file conform to the constraints
-                        if(keyPrefix){
+                        if (keyPrefix) {
                             _this.validatePropsKey(options, {
                                 json: jsonObj,
                                 file: file
@@ -229,17 +225,17 @@ module.exports = function(grunt) {
 
                     // logic to handle the scripts properties file, generate a combiled properties file for each locale
                     // then convert it to a JS file conform to the require js syntax
-                    scriptsLocalePropsSrc = scriptsPropsSrc.map(function(scriptsPropsFilePattern, idx){
+                    scriptsLocalePropsSrc = scriptsPropsSrc.map(function(scriptsPropsFilePattern) {
                         return path.join(localesRootPath, locale, scriptsPropsFilePattern);
                     });
 
                     scriptsPropsFileArr = grunt.file.expand(scriptsLocalePropsSrc);
 
-                    scriptsPropsFileArr.forEach(function(file, idx){
+                    scriptsPropsFileArr.forEach(function(file) {
                         var jsonObj = grunt.file.exists(file) ? parser.read(file) : {};
 
                         // Validate whether the key in the script properties file conform to the constraints
-                        if(keyPrefix){
+                        if (keyPrefix) {
                             _this.validatePropsKey(options, {
                                 json: jsonObj,
                                 file: file
@@ -260,7 +256,7 @@ module.exports = function(grunt) {
 
             },
             // Combile commonPropsJson with scriptsPropsJson to generate a new sripts properties for each locale
-            generateScriptsProps: function (options){
+            generateScriptsProps: function(options) {
 
                 var scriptsPropsFileName = options.scriptsPropsFileName,
                     localesList = this.getLocalesList(),
@@ -269,7 +265,7 @@ module.exports = function(grunt) {
                     getScriptsPropsFilePath = options.getScriptsPropsFilePath,
                     _this = this;
 
-                localesList.forEach(function(locale, idx){
+                localesList.forEach(function(locale) {
                     var commonPropsJson = {},
                         scriptsPropsJson = {},
                         content = '',
@@ -281,50 +277,49 @@ module.exports = function(grunt) {
                         task: itself
                     });
 
-                    _.some(commonPropsJsonList, function (obj, idx, list){
-                        if(obj[locale]){
+                    _.some(commonPropsJsonList, function(obj) {
+                        if (obj[locale]) {
                             commonPropsJson = obj[locale];
                             return true;
                         }
                     });
 
-                    _.some(scriptsPropsJsonList, function (obj, idx, list){
-                        if(obj[locale]){
+                    _.some(scriptsPropsJsonList, function(obj) {
+                        if (obj[locale]) {
                             scriptsPropsJson = obj[locale];
                             return true;
                         }
                     });
 
                     scriptsPropsJson = _.extend({}, commonPropsJson, scriptsPropsJson);
-                    
+
                     grunt.verbose.subhead('[precompile] **** scriptsPropsJson', scriptsPropsJson);
 
                     content = grunt.file.read(path.join(__dirname, i18nPropsForScriptsTemplateFile));
                     // Pretty print the JSON file format
                     scriptsPropsJson = JSON.stringify(scriptsPropsJson, null, 4);
-                    scriptsPropsJson = scriptsPropsJson.replace(new RegExp(eol + _this.createSpace(4), "mg"), eol + _this.createSpace(8));
-                    scriptsPropsJson = scriptsPropsJson.replace("}", _this.createSpace(4) + "}");
+                    scriptsPropsJson = scriptsPropsJson.replace(new RegExp(eol + _this.createSpace(4), 'mg'), eol + _this.createSpace(8));
+                    scriptsPropsJson = scriptsPropsJson.replace('}', _this.createSpace(4) + '}');
 
-                    content = content.replace("{{i18nPropsJson}}", scriptsPropsJson);
+                    content = content.replace('{{i18nPropsJson}}', scriptsPropsJson);
                     grunt.file.write(destPath, content);
-                    
+
                 });
             },
             // Copy all the source dust template files to each targeted locale folder.
-            copyTemplateFiles: function (options){
+            copyTemplateFiles: function(options) {
 
                 var localesList = this.getLocalesList(),
                     templatesList = this.getTemplatesList(),
-                    getTemplateFilePath = options.getTemplateFilePath,
-                    _this = this;
+                    getTemplateFilePath = options.getTemplateFilePath;
 
-                filesSrc.forEach(function(srcpath, idx) {
+                filesSrc.forEach(function(srcpath) {
                     // this code line: srcpath = path.normalize(srcpath)
                     // fix the issue on Windows Platform, since on windows git bash, the srcpath and sep value will be like below
                     //
                     // srcpath:  app/templates/footer.dust
                     // sep    :  \
-                    // 
+                    //
                     // so firslty need to normalize the file path
                     var destpath = '',
                         templatespath = '';
@@ -334,14 +329,14 @@ module.exports = function(grunt) {
 
                     grunt.verbose.writeln('[precompile] ==== src template path: ', srcpath);
 
-                    localesList.forEach(function(locale, idx) {
-                        
+                    localesList.forEach(function(locale) {
+
                         destpath = getTemplateFilePath({
                                 locale: locale,
                                 filepath: srcpath,
                                 task: itself
                         });
-                        
+
                         grunt.verbose.writeln('[precompile] ==== src template path in deployment folder: ', destpath);
 
                         templatesList.push(destpath);
@@ -358,7 +353,7 @@ module.exports = function(grunt) {
             ** Handle the {@i18n} tag in each dust template file in each locale, replace it with associated localized properties file
             ** Or show the missing key error message if the key is missing
             */
-            generateLocalizedTemplates: function (options){
+            generateLocalizedTemplates: function(options) {
 
                 var _this = this,
                     keyPrefix = options.keyPrefix,
@@ -366,7 +361,7 @@ module.exports = function(grunt) {
                     commonPropsJsonList = this.getCommonPropsJsonList();
 
                 grunt.verbose.writeln(('[precompile] ==== templatesList is: ').bold, templatesList);
-                templatesList.map(function(filepath){
+                templatesList.map(function(filepath) {
                     var dustFilePath = filepath,
                         dustFileContent = grunt.file.read(dustFilePath),
                         propsFilePath = dustFilePath.replace(dustRegExp, '.properties'),
@@ -374,7 +369,7 @@ module.exports = function(grunt) {
                         templatesPropsJSON = isPropsExists ? parser.read(propsFilePath) : {};
 
                     // Validate whether the key in the dust templates properties file conform to the constraints
-                    if(keyPrefix){
+                    if (keyPrefix) {
                         _this.validatePropsKey(options, {
                             json: templatesPropsJSON,
                             file: propsFilePath
@@ -390,109 +385,107 @@ module.exports = function(grunt) {
                         templatesPropsJSON: templatesPropsJSON
                     };
 
-                }).forEach(function(obj, idx){
+                }).forEach(function(obj) {
                     var content = obj.dustFileContent,
                         dustFilePath = obj.dustFilePath,
                         templatesPropsJSON = obj.templatesPropsJSON,
-                        propsFilePath = obj.propsFilePath,
                         isI18nExists = false,
-                        isCommonKey = false,
                         localizedText = '',
                         locale = _this.getLocaleFromFilePath(dustFilePath),
                         commonPropsJson = {},
                         ret = '';
 
-                    commonPropsJsonList.forEach(function(obj){
-                        if(obj[locale]){
+                    commonPropsJsonList.forEach(function(obj) {
+                        if (obj[locale]) {
                           commonPropsJson = obj[locale];
                         }
-                    });  
+                    });
                     /*
-                    ** Though we can use the RegExp object's exec or String.prototype.match method, 
+                    ** Though we can use the RegExp object's exec or String.prototype.match method,
                     ** however the String.prototype.replace method is much easier and flexible to generate the resouce bundle file
                     ** no matter this file format is a JAVA property or JSON file
                     */
-                    ret = content.replace(i18nRegExp, function(match, key, value, offset, origStr){
+                    ret = content.replace(i18nRegExp, function(match, key, value, offset, origStr) {
 
                         grunt.verbose.writeln('[precompile] ==== replace key with localed value: ', {match: match, key: key, value: value, offset: offset, origStr: origStr});
-                        
-                        if(!isI18nExists){
+
+                        if (!isI18nExists) {
                             isI18nExists = true;
                         }
-                        
+
                         // Fetch the localized message associated with this key, firstly search in the associated dust template
                         // if not found, then search it in the common properties files, if still not found then abort the grunt task.
                         localizedText = templatesPropsJSON[key];
-                        
-                        if(_this.isEmpty(localizedText)){
+
+                        if (_this.isEmpty(localizedText)) {
 
                             localizedText = commonPropsJson[key];
-                            
-                            if(_this.isEmpty(localizedText)){
+
+                            if (_this.isEmpty(localizedText)) {
                                 grunt.fail.fatal('[precompile] ==== [[ missing key: ' + (key).bold + ' ]] in file - ' + (dustFilePath).bold);
                             }
-                            else{
+                            else {
                                 grunt.verbose.writeln('[precompile] ==== this key [[' + (key).blue + ']] has been found in locale [[ ' + (locale).yellow + ' ]]');
                             }
                         }
-                        else{
+                        else {
                             grunt.verbose.writeln('[precompile] ==== this key [[' + (key).blue + ']] has been found in locale [[ ' + (locale).yellow + ' ]]');
                         }
-                        
+
                         return localizedText;
                     });
 
-                    if(isI18nExists){
+                    if (isI18nExists) {
                         grunt.log.writeln('[precompile] ==== this file has i18n tag: ', dustFilePath);
                         grunt.file.write(dustFilePath, ret);
                     }
                 });
             },
 
-            validatePropsKey: function (options, settings){
+            validatePropsKey: function(options, settings) {
                 var keyPrefix = options.keyPrefix,
                     json = settings.json,
                     propsFilePath = settings.file;
 
-                if(!this.endsWith(keyPrefix, '.')){
-                    keyPrefix = keyPrefix + '.'
+                if (!this.endsWith(keyPrefix, '.')) {
+                    keyPrefix = keyPrefix + '.';
                 }
 
-                _.each(_.keys(json), function (key, idx, list){
-                    if(key.indexOf(keyPrefix) !== 0){
+                _.each(_.keys(json), function(key) {
+                    if (key.indexOf(keyPrefix) !== 0) {
                         grunt.fail.fatal('[precompile] ==== [[ this key: ' + (key).bold + ' ]] in properties file - ' + (propsFilePath).bold + ' does not conform to the key constrains');
                     }
                 });
 
             },
 
-            checkRequiredConfig: function (){
+            checkRequiredConfig: function() {
                 var requiredOptions = [
                     'localeFilesExpandPatterns',
-                    'implementedLocalesList', 
-                    'getTemplateFilePath', 
+                    'implementedLocalesList',
+                    'getTemplateFilePath',
                     'getScriptsPropsFilePath',
                     'keyPrefix'
                 ];
 
-                itself.requiresConfig.apply(itself, _.map(requiredOptions, function (val, idx, list){
+                itself.requiresConfig.apply(itself, _.map(requiredOptions, function(val) {
                     return [itself.name, itself.target, 'options', val].join('.');
                 }));
             },
 
-            copyLocalesPropsFiles: function (options){
+            copyLocalesPropsFiles: function(options) {
                 var patterns = options.localeFilesExpandPatterns,
                     fileListMapping = grunt.file.expandMapping(patterns.src, patterns.dest, patterns);
 
                 grunt.verbose.writeln('[precompile] ==== locale file list mapping: ', fileListMapping);
-                _.each(fileListMapping, function (obj){
+                _.each(fileListMapping, function(obj) {
                     var src = obj.src[0],
                         dest = obj.dest;
 
-                    if(grunt.file.isDir(src)){
+                    if (grunt.file.isDir(src)) {
                         grunt.file.mkdir(dest);
                     }
-                    else{
+                    else {
                         grunt.file.copy(src, dest);
                     }
                 });
@@ -503,7 +496,7 @@ module.exports = function(grunt) {
                 grunt.verbose.writeln(('[precompile] ==== localesRootPath is: ').bold.blue, this.getLocalesRootPath());
             },
 
-            start: function (options){
+            start: function(options) {
                 this.generateScriptsProps(options);
                 this.copyTemplateFiles(options);
                 this.generateLocalizedTemplates(options);
