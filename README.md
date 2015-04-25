@@ -92,21 +92,19 @@ This config option is **`required`**
 
 It specify the keyPrefix in all properties files under i18n folder to make sure all the properties key have to conform to the key constrains. 
 
-#### options.i18nPropsConfig
-Type: `Object`
+#### options.i18nPropsId
+Type: `String`
 
-No default value, this is **`optional`**
+This config option is **`required`**
 
-It specify the module definition of generated i18n properties file, this object can contains two fields, one is `i18nPropsId` and the other is `i18nPropsDeps`. See below exmaple:
+It specify the module id of generated i18n properties file, See below exmaple:
 
 If the options has the following config
 
 ```javascript
 options: {
     ...
-    i18nPropsConfig: {
-        i18nPropsId: 'geolocation-i18nProps'
-    }
+    i18nPropsId: 'geolocation-i18nProps'
     ...
 }
 ```
@@ -121,6 +119,13 @@ define('geolocation-i18nProps', [], function(){
     };
 });
 ```
+
+#### options.i18nPropsDeps
+Type: `Array`
+
+No default value, this is **`optional`**
+
+It specify the module dependencies of generated i18n properties file, normally app don't need to config it.
 
 #### options.commonPropsSrc
 Type: `Array`

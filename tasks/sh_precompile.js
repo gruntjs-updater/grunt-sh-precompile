@@ -259,10 +259,8 @@ module.exports = function(grunt) {
             generateScriptsProps: function(options) {
 
                 var scriptsPropsFileName = options.scriptsPropsFileName;
-                var i18nPropsConfig = options.i18nPropsConfig || {};
-                var i18nPropsId = i18nPropsConfig.i18nPropsId;
-                var i18nPropsDeps = i18nPropsConfig.i18nPropsDeps || [];
-                var i18nPropsDef = '';
+                var i18nPropsId = options.i18nPropsId || '';
+                var i18nPropsDeps = options.i18nPropsDeps || [];
                 var localesList = this.getLocalesList();
                 var commonPropsJsonList = this.getCommonPropsJsonList();
                 var scriptsPropsJsonList = this.getScriptsPropsJsonList();
@@ -301,15 +299,11 @@ module.exports = function(grunt) {
 
                     content = grunt.file.read(path.join(__dirname, i18nPropsForScriptsTemplateFile));
 
-                    // replace the {{i18nPropsDef}} with real i18n props module definition
-                    if (i18nPropsId) {
-                        i18nPropsDef = "'" + i18nPropsId + "', " + JSON.stringify(i18nPropsDeps) + ', ';
-                    }
-                    else {
-                        i18nPropsDef = '';
-                    }
-
-                    content = content.replace('{{i18nPropsDef}}', i18nPropsDef);
+                    // replace the {i18nPropsId} and {i18nPropsDeps} with real i18n props module definition
+                    content = content.replace('{i18nPropsId}', i18nPropsId);
+                    i18nPropsDeps = JSON.stringify(i18nPropsDeps);
+                    i18nPropsDeps = i18nPropsDeps.substr(1, i18nPropsDeps - 2);
+                    content = content.replace('{i18nPropsDeps}', i18nPropsDeps);
 
                     // Pretty print the JSON file format
                     scriptsPropsJson = JSON.stringify(scriptsPropsJson, null, 4);
@@ -481,7 +475,8 @@ module.exports = function(grunt) {
                     'implementedLocalesList',
                     'getTemplateFilePath',
                     'getScriptsPropsFilePath',
-                    'keyPrefix'
+                    'keyPrefix',
+                    'i18nPropsId'
                 ];
 
                 itself.requiresConfig.apply(itself, _.map(requiredOptions, function(val) {
