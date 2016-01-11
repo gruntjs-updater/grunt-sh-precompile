@@ -17,8 +17,7 @@ module.exports = function(grunt) {
          // Merge task-specific and/or target-specific options with these defaults.
         var options = this.options({
                 commonPropsSrc: ['common/**/*.properties'],
-                scriptsPropsSrc: ['scripts/**/*.properties'],
-                scriptsPropsFileName: 'i18nPropsForScripts'
+                scriptsPropsSrc: ['scripts/**/*.properties']
             }),
             filesSrc = this.filesSrc,
             i18nRegExp = /\{@i18n\s+?key=["](.+?)["]\s*?\/}/gmi,
@@ -29,7 +28,6 @@ module.exports = function(grunt) {
             fs = require('fs'),
             _ = require('underscore'),
             parser = require('properties-parser'), // Please refer to https://github.com/xavi-/node-properties-parser
-            i18nPropsForScriptsTemplateFile = '../i18nPropsForScripts.tpl',
             itself = this,
             util = {};
 
@@ -250,72 +248,12 @@ module.exports = function(grunt) {
                     scriptsPropsJsonList.push(scriptsPropsJson);
                 });
 
-                grunt.log.writeln(('[precompile] ==== available locale list is: ').bold.blue, localesList);
-                grunt.log.writeln(('[precompile] ==== commonPropsJsonList is: ').bold.blue, commonPropsJsonList);
-                grunt.log.writeln(('[precompile] ==== scriptsPropsJsonList is: ').bold.blue, scriptsPropsJsonList);
+                grunt.verbose.writeln(('[precompile] ==== available locale list is: ').bold.blue, localesList);
+                grunt.verbose.writeln(('[precompile] ==== commonPropsJsonList is: ').bold.blue, commonPropsJsonList);
+                grunt.verbose.writeln(('[precompile] ==== scriptsPropsJsonList is: ').bold.blue, scriptsPropsJsonList);
 
             },
-            // Combile commonPropsJson with scriptsPropsJson to generate a new sripts properties for each locale
-            generateScriptsProps: function(options) {
 
-                var scriptsPropsFileName = options.scriptsPropsFileName;
-                var i18nPropsId = options.i18nPropsId || '';
-                var i18nPropsDeps = options.i18nPropsDeps || [];
-                var localesList = this.getLocalesList();
-                var commonPropsJsonList = this.getCommonPropsJsonList();
-                var scriptsPropsJsonList = this.getScriptsPropsJsonList();
-                var getScriptsPropsFilePath = options.getScriptsPropsFilePath;
-                var _this = this;
-
-                localesList.forEach(function(locale) {
-                    var commonPropsJson = {},
-                        scriptsPropsJson = {},
-                        content = '',
-                        destPath = '';
-
-                    destPath = getScriptsPropsFilePath({
-                        locale: locale,
-                        scriptsPropsFileName: scriptsPropsFileName,
-                        task: itself
-                    });
-
-                    _.some(commonPropsJsonList, function(obj) {
-                        if (obj[locale]) {
-                            commonPropsJson = obj[locale];
-                            return true;
-                        }
-                    });
-
-                    _.some(scriptsPropsJsonList, function(obj) {
-                        if (obj[locale]) {
-                            scriptsPropsJson = obj[locale];
-                            return true;
-                        }
-                    });
-
-                    scriptsPropsJson = _.extend({}, commonPropsJson, scriptsPropsJson);
-
-                    grunt.verbose.subhead('[precompile] **** scriptsPropsJson', scriptsPropsJson);
-
-                    content = grunt.file.read(path.join(__dirname, i18nPropsForScriptsTemplateFile));
-
-                    // replace the {i18nPropsId} and {i18nPropsDeps} with real i18n props module definition
-                    content = content.replace('{i18nPropsId}', i18nPropsId);
-                    i18nPropsDeps = JSON.stringify(i18nPropsDeps);
-                    i18nPropsDeps = i18nPropsDeps.substr(1, i18nPropsDeps - 2);
-                    content = content.replace('{i18nPropsDeps}', i18nPropsDeps);
-
-                    // Pretty print the JSON file format
-                    scriptsPropsJson = JSON.stringify(scriptsPropsJson, null, 4);
-                    scriptsPropsJson = scriptsPropsJson.replace(new RegExp(eol + _this.createSpace(4), 'mg'), eol + _this.createSpace(8));
-                    scriptsPropsJson = scriptsPropsJson.replace('}', _this.createSpace(4) + '}');
-
-                    content = content.replace('{{i18nPropsJson}}', scriptsPropsJson);
-
-                    grunt.file.write(destPath, content);
-
-                });
-            },
             // Copy all the source dust template files to each targeted locale folder.
             copyTemplateFiles: function(options) {
 
@@ -474,9 +412,7 @@ module.exports = function(grunt) {
                     'localeFilesExpandPatterns',
                     'implementedLocalesList',
                     'getTemplateFilePath',
-                    'getScriptsPropsFilePath',
-                    'keyPrefix',
-                    'i18nPropsId'
+                    'keyPrefix'
                 ];
 
                 itself.requiresConfig.apply(itself, _.map(requiredOptions, function(val) {
@@ -508,7 +444,6 @@ module.exports = function(grunt) {
             },
 
             start: function(options) {
-                this.generateScriptsProps(options);
                 this.copyTemplateFiles(options);
                 this.generateLocalizedTemplates(options);
             }

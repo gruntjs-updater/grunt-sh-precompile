@@ -78,13 +78,6 @@ build-dev/resources/shape/<appName>/i18n/<locale>/tempaltes/
 
 The key point in this example is **the dust template file must be put together with the properties file in the same folder**.
 
-#### options.getScriptsPropsFilePath
-Type: `Function`
-
-Returned value type: `String`, this is **`required`**
-
-It return the generated localized javascript properties file path in deployment folder structure. 
-
 #### options.keyPrefix
 Type: `String`
 
@@ -92,33 +85,6 @@ This config option is **`required`**
 
 It specify the keyPrefix in all properties files under i18n folder to make sure all the properties key have to conform to the key constrains. 
 
-#### options.i18nPropsId
-Type: `String`
-
-This config option is **`required`**
-
-It specify the module id of generated i18n properties file, See below exmaple:
-
-If the options has the following config
-
-```javascript
-options: {
-    ...
-    i18nPropsId: 'geolocation-i18nProps'
-    ...
-}
-```
-
-Then the generated i18nPropsForScripts.js will be like below:
-```javascript
-define('geolocation-i18nProps', [], function(){
-    return {
-        "common.components.geolocation.defaultLink.text": "all locations",
-        "common.components.geolocation.popular-in.text": "Popular events in&nbsp;",
-        "common.components.geolocation.popular-near.text": "Popular events near&nbsp;"
-    };
-});
-```
 
 #### options.i18nPropsDeps
 Type: `Array`
@@ -141,12 +107,6 @@ Default value: `['scripts/**/*.properties']`, this is **`optional`**
 
 It specify where the scripts properties file locate, it should be relative to the locale's folder. Normally, this value should not be changed and app can just accept the default value.
 
-#### options.scriptsPropsFileName
-Type: `Array`
-
-Default value: `'i18nPropsForScripts'`, this is **`optional`**
-
-It specify the generated javascript properties file name.
 
 ### Usage Examples
 
@@ -176,19 +136,6 @@ meventdev: {
             
             templatespath = filepath.split(sep).slice(2).join(sep);
             destpath = path.join(localesRootPath, locale, templatespath);
-
-            return destpath;
-        },
-        getScriptsPropsFilePath: function (settings) {
-            var task = settings.task,
-                locale = settings.locale,
-                scriptsPropsFileName = settings.scriptsPropsFileName,
-                buildDevPath = grunt.config.get('buildDevPath'),
-                multiFeatureScriptsPath = grunt.config.get('multiFeatureScriptsPath'),
-                destpath = '';
-
-            destpath = path.join(buildDevPath, multiFeatureScriptsPath, locale, scriptsPropsFileName + '.js');
-            grunt.verbose.subhead('[precompile] ==== scriptsPropsFilePath-----', destpath);                        
 
             return destpath;
         },
@@ -222,17 +169,6 @@ dev:{
 
             templatespath = filepath.split(sep).slice(1).join(sep);
             destpath = path.join(i18nRootPath, locale, templatespath);
-
-            return destpath;
-        },
-        getScriptsPropsFilePath: function (settings) {
-            var locale = settings.locale,
-                scriptsPropsFileName = settings.scriptsPropsFileName,
-                buildDevPath = grunt.config.get('buildDevPath'),
-                featureScriptsPath = grunt.config.get('featureScriptsPath'),
-                destpath = '';
-            
-            destpath = path.join(buildDevPath, featureScriptsPath, locale, scriptsPropsFileName + '.js');
 
             return destpath;
         },
